@@ -89,7 +89,9 @@ func buildSandbox(s Scenario, flavour Flavour, now time.Time) (*Sandbox, error) 
 			return nil, err
 		}
 	}
-	if s.Credentials {
+	// A cached usage payload means a token existed when it was fetched: the
+	// kit flavour, which fetches instead of reading a cache, needs that token
+	if s.Credentials || (flavour == Kit && len(s.Usage) > 0) {
 		cred := fmt.Sprintf(`{"claudeAiOauth":{"accessToken":%q}}`, syntheticToken)
 		dir := filepath.Join(sb.home, ".claude")
 		if err := os.MkdirAll(dir, 0o700); err != nil {

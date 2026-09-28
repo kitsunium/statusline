@@ -1,0 +1,12 @@
+{
+  "binary": "statusline",
+  "flavour": "kit",
+  "scenario": "busy/default",
+  "runs": 300,
+  "p50_ms": 6.112,
+  "p95_ms": 12.453,
+  "p99_ms": 25.734,
+  "max_ms": 34.22,
+  "host": "Intel(R) Core(TM) i5-3210M CPU @ 2.50GHz",
+  "measured": "2026-09-28"
+}

@@ -56,6 +56,7 @@ func main() {
 	runs := fs.Int("runs", 300, "latency: runs per measure")
 	scenario := fs.String("scenario", "busy/default", "latency: scenario/variant measured")
 	out := fs.String("out", "", "latency: file written")
+	cold := fs.Bool("cold", false, "latency (kit): stop the daemon before every run, so each one renders from the cache")
 	_ = fs.Parse(os.Args[2:])
 	if *bin == "" {
 		usage()
@@ -78,7 +79,7 @@ func main() {
 	case "check":
 		os.Exit(check(abs, Flavour(*flavour), *dir, scenarios, filter))
 	case "latency":
-		latency(abs, Flavour(*flavour), scenarios, *scenario, *runs, *out)
+		latency(abs, Flavour(*flavour), scenarios, *scenario, *runs, *out, *cold)
 	default:
 		usage()
 	}
@@ -112,16 +113,20 @@ func render(bin string, flavour Flavour, s Scenario, v Variant) (Result, error) 
 }
 
 // warm runs the new binary until its daemon serves a stable line: the first
-// render after a cold start is the cached one by design, the parity is on the
-// warm one.
+// render after a cold start is the cached one by design, and the daemon's
+// first network refresh runs beside its first collections, so the parity is
+// on a line that stayed the same across more than the daemon's freshness
+// window (750 ms) after a settling second.
 func warm(sb *Sandbox, bin string, s Scenario, v Variant) (Result, error) {
-	deadline := time.Now().Add(5 * time.Second)
+	start := time.Now()
+	deadline := start.Add(8 * time.Second)
 	prev, err := sb.run(bin, v)
 	if err != nil {
 		return prev, err
 	}
+	time.Sleep(time.Second)
+	stableSince := time.Time{}
 	for time.Now().Before(deadline) {
-		time.Sleep(150 * time.Millisecond)
 		if s.EvenSecond {
 			waitEvenSecond()
 		}
@@ -130,9 +135,17 @@ func warm(sb *Sandbox, bin string, s Scenario, v Variant) (Result, error) {
 			return cur, err
 		}
 		if bytes.Equal(cur.Stdout, prev.Stdout) {
-			return cur, nil
+			if stableSince.IsZero() {
+				stableSince = time.Now()
+			}
+			if time.Since(stableSince) >= time.Second {
+				return cur, nil
+			}
+		} else {
+			stableSince = time.Time{}
 		}
 		prev = cur
+		time.Sleep(250 * time.Millisecond)
 	}
 	return prev, nil
 }
@@ -248,7 +261,10 @@ func check(bin string, flavour Flavour, dir string, scenarios []Scenario, filter
 			}
 			if !bytes.Equal(res.Stdout, want) || res.Exit != 0 {
 				failed++
-				fmt.Printf("FAIL %-40s exit=%d\n  want %s\n  got  %s\n", id, res.Exit, strconv.Quote(string(want)), strconv.Quote(string(res.Stdout)))
+				at := firstDiff(want, res.Stdout)
+				fmt.Printf("FAIL %-40s exit=%d, first difference at byte %d\n  want %s\n  got  %s\n", id, res.Exit, at,
+					strconv.Quote(ansi.ReplaceAllString(string(want), "")), strconv.Quote(ansi.ReplaceAllString(string(res.Stdout), "")))
+				fmt.Printf("  want[%d:] %s\n  got[%d:]  %s\n", at, excerpt(want, at), at, excerpt(res.Stdout, at))
 				if len(res.Stderr) > 0 {
 					fmt.Printf("  stderr %s\n", strconv.Quote(string(res.Stderr)))
 				}
@@ -270,6 +286,7 @@ type Latency struct {
 	Binary   string  `json:"binary"`
 	Flavour  Flavour `json:"flavour"`
 	Scenario string  `json:"scenario"`
+	Cold     bool    `json:"cold,omitempty"`
 	Runs     int     `json:"runs"`
 	P50Ms    float64 `json:"p50_ms"`
 	P95Ms    float64 `json:"p95_ms"`
@@ -280,7 +297,7 @@ type Latency struct {
 }
 
 // latency measures the wall time of one render, process start to exit.
-func latency(bin string, flavour Flavour, scenarios []Scenario, id string, runs int, out string) {
+func latency(bin string, flavour Flavour, scenarios []Scenario, id string, runs int, out string, cold bool) {
 	name, variant, _ := strings.Cut(id, "/")
 	var s *Scenario
 	for i := range scenarios {
@@ -312,6 +329,13 @@ func latency(bin string, flavour Flavour, scenarios []Scenario, id string, runs 
 	}
 	took := make([]float64, 0, runs)
 	for i := 0; i < runs; i++ {
+		if cold {
+			if _, err := sb.run(bin, v, "daemon", "stop"); err != nil {
+				fatal(err)
+			}
+			// Let the stopped daemon release its socket
+			time.Sleep(50 * time.Millisecond)
+		}
 		res, err := sb.run(bin, v)
 		if err != nil {
 			fatal(err)
@@ -321,7 +345,7 @@ func latency(bin string, flavour Flavour, scenarios []Scenario, id string, runs 
 	sort.Float64s(took)
 	pick := func(q float64) float64 { return took[min(len(took)-1, int(q*float64(len(took))))] }
 	l := Latency{
-		Binary: filepath.Base(bin), Flavour: flavour, Scenario: id, Runs: runs,
+		Binary: filepath.Base(bin), Flavour: flavour, Scenario: id, Cold: cold, Runs: runs,
 		P50Ms: pick(0.50), P95Ms: pick(0.95), P99Ms: pick(0.99), MaxMs: took[len(took)-1],
 		Host: hostLabel(), Measured: time.Now().UTC().Format("2006-01-02"),
 	}
@@ -346,4 +370,24 @@ func hostLabel() string {
 		}
 	}
 	return "unknown"
+}
+
+// firstDiff is the offset of the first differing byte.
+func firstDiff(a, b []byte) int {
+	n := min(len(a), len(b))
+	for i := 0; i < n; i++ {
+		if a[i] != b[i] {
+			return i
+		}
+	}
+	return n
+}
+
+// excerpt quotes 80 bytes from an offset.
+func excerpt(b []byte, at int) string {
+	end := min(len(b), at+80)
+	if at > len(b) {
+		return `""`
+	}
+	return strconv.Quote(string(b[at:end]))
 }
