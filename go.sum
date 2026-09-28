@@ -8,3 +8,5 @@ github.com/kitsunium/sdk/pkg v0.11.0 h1:f2x+GwFDrBupd7xhrbiPWI/5BLFGRcy7Tm5xKV5c
 github.com/kitsunium/sdk/pkg v0.11.0/go.mod h1:osKiyUFuxmi8QnfA62ZR8ou2hAJi+Mo/5k4SsExtSoU=
 golang.org/x/mod v0.41.0 h1:qJmnOUb4YB+FsEuM3HcWucdZASCPGhsX6uljO6pog0c=
 golang.org/x/mod v0.41.0/go.mod h1:Ek9pY8RKWXwsWvd3rQiHYtMqkjSUV+s1Rj7j4H5Ur6o=
+pgregory.net/rapid v1.2.0 h1:keKAYRcjm+e1F0oAuU5F5+YPAWcyxNNRK2wud503Gnk=
+pgregory.net/rapid v1.2.0/go.mod h1:PY5XlDGj0+V1FCq0o192FdRhpKHGTRIWBgqjDBTrq04=

@@ -33,14 +33,14 @@ const (
 // unsafeID matches the characters replaced in a list or session directory name.
 var unsafeID = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
 
-// board reads the task list of one session from two places.
+// sessionBoard reads the task list of one session from two places.
 //
 // The kodflow tasks MCP (kodflow-hooks) keeps every agent's tasks in
 // <config>/kodflow/sessions/<session>/tasks.json, next to agents.json, the
 // running subagents recorded by the SubagentStart/SubagentStop hooks. It is
 // preferred: it tells the main agent's tasks apart. The built-in task tools'
 // one-file-per-task list under <config>/tasks/<list>/ is the fallback.
-type board struct {
+type sessionBoard struct {
 	sessionDir string
 	builtinDir string
 	now        func() time.Time
@@ -99,19 +99,19 @@ type openEpic struct {
 //   - now: the instant subagents are judged stale against
 //
 // Returns:
-//   - *board: reader for that session, reading nothing without an id
-func newBoard(sessionID, listID string, now time.Time) *board {
+//   - *sessionBoard: reader for that session, reading nothing without an id
+func newBoard(sessionID, listID string, now time.Time) *sessionBoard {
 	clock := func() time.Time { return now }
 	base := os.Getenv(configDirEnv)
 	// Default to the per-user configuration directory
 	if base == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {
-			return &board{now: clock}
+			return &sessionBoard{now: clock}
 		}
 		base = filepath.Join(home, ".claude")
 	}
-	p := &board{now: clock}
+	p := &sessionBoard{now: clock}
 	// The kodflow stores are keyed by the whole session id
 	if sessionID != "" {
 		p.sessionDir = filepath.Join(base, "kodflow", "sessions", unsafeID.ReplaceAllString(sessionID, "-"))
@@ -133,7 +133,7 @@ func newBoard(sessionID, listID string, now time.Time) *board {
 //
 // Returns:
 //   - snapshot.TaskBoard: open epics in display order, subagents attributed
-func (p *board) board() snapshot.TaskBoard {
+func (p *sessionBoard) board() snapshot.TaskBoard {
 	epics, found := p.mcpEpics()
 	// No MCP file: the built-in list, if it is still open, is the only pill
 	if !found {
@@ -151,7 +151,7 @@ func (p *board) board() snapshot.TaskBoard {
 //
 // Params:
 //   - board: board whose epics receive the counts
-func (p *board) attributeSubagents(board *snapshot.TaskBoard) {
+func (p *sessionBoard) attributeSubagents(board *snapshot.TaskBoard) {
 	// No session located, nothing to count
 	if p.sessionDir == "" {
 		return
@@ -194,7 +194,7 @@ func (p *board) attributeSubagents(board *snapshot.TaskBoard) {
 //   - []snapshot.Epic: open epics, the active one first, then the most recently
 //     touched
 //   - bool: false when the file does not exist
-func (p *board) mcpEpics() ([]snapshot.Epic, bool) {
+func (p *sessionBoard) mcpEpics() ([]snapshot.Epic, bool) {
 	// No session located, nothing to read
 	if p.sessionDir == "" {
 		return nil, false
@@ -342,7 +342,7 @@ func orderEpics(open []openEpic) []snapshot.Epic {
 //
 // Returns:
 //   - snapshot.TaskList: current list, empty when there is none
-func (p *board) builtinTasks() snapshot.TaskList {
+func (p *sessionBoard) builtinTasks() snapshot.TaskList {
 	// No list located, nothing to read
 	if p.builtinDir == "" {
 		return snapshot.TaskList{}

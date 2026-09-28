@@ -15,11 +15,26 @@ import (
 // headerSize is the frame length prefix: 4 bytes, big endian.
 const headerSize int = 4
 
-// hash digests every field, separated so that moving a byte from one field
-// to the next changes the digest.
+// hash digests every field length-prefixed, so that moving a byte from one
+// field to the next changes the digest (a separator byte could itself
+// appear in a field).
 func (k Key) hash() string {
-	sum := sha256.Sum256([]byte(k.SessionID + "\x00" + k.TranscriptPath + "\x00" + k.SessionDir + "\x00" + k.TaskListID))
+	sum := digest(k.SessionID, k.TranscriptPath, k.SessionDir, k.TaskListID)
 	return hex.EncodeToString(sum[:12])
+}
+
+// digest hashes length-prefixed fields.
+func digest(fields ...string) [sha256.Size]byte {
+	h := sha256.New()
+	var n [8]byte
+	for _, f := range fields {
+		binary.BigEndian.PutUint64(n[:], uint64(len(f)))
+		h.Write(n[:])
+		h.Write([]byte(f))
+	}
+	var out [sha256.Size]byte
+	copy(out[:], h.Sum(nil))
+	return out
 }
 
 // cachePath names the key's snapshot file in the instance's cache.
@@ -32,7 +47,7 @@ func (i Instance) cachePath(key Key) string {
 // it, so two binaries at two paths, or two configuration directories,
 // never share a daemon.
 func locate(in LocateInput) Instance {
-	sum := sha256.Sum256([]byte(in.ConfigDir + "\x00" + in.Executable))
+	sum := digest(in.ConfigDir, in.Executable)
 	dir := filepath.Join(in.RuntimeDir, "statusline-"+strconv.Itoa(in.UID), hex.EncodeToString(sum[:8]))
 	return Instance{
 		Dir:    dir,
