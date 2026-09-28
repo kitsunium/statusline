@@ -79,12 +79,11 @@ jobs:
           "$RUNNER_TEMP/harness" latency -bin "$RUNNER_TEMP/statusline" -flavour kit -cold -runs 100 -scenario busy/default
 
   design:
-    # kit gen -check and kit check against design/. kitsunium/platform is
-    # private: the job runs once the repository variable KIT_REF (a platform
-    # commit) and the secret KIT_READ_TOKEN (read access to it) are set.
+    # kit gen -check and kit check against design/, with the kit that
+    # kit.version names (its one source, ADR 0010 §7). kitsunium/platform is
+    # private: installing kit needs the secret KIT_READ_TOKEN.
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: ${{ vars.KIT_REF != '' }}
     env:
       GOPRIVATE: github.com/kitsunium/*
     steps:
@@ -103,7 +102,7 @@ jobs:
             exit 0
           fi
           git config --global url."https://x-access-token:${KIT_READ_TOKEN}@github.com/kitsunium/".insteadOf "https://github.com/kitsunium/"
-          go install "github.com/kitsunium/platform/cmd/kit@${{ vars.KIT_REF }}"
+          go install "github.com/kitsunium/platform/cmd/kit@$(cat kit.version)"
           echo "ready=true" >> "$GITHUB_OUTPUT"
       - name: the generated files are the design's
         if: steps.kit.outputs.ready == 'true'
@@ -111,3 +110,6 @@ jobs:
       - name: kit check
         if: steps.kit.outputs.ready == 'true'
         run: kit check
+      - name: kit test (per component)
+        if: steps.kit.outputs.ready == 'true'
+        run: kit test

@@ -5,6 +5,7 @@ package powerline
 
 import (
 	"hash/fnv"
+	"os"
 	"testing"
 )
 
@@ -12,10 +13,11 @@ import (
 // path, it seeds its values, so a pull request replays the same ones.
 const designDigest = "sha256:d45b2928cba7e8198c9466409eef5b3a5f54361857217a2585461fb161fccbd3"
 
-// designSeed is the seed of a property: the design's digest and its path.
+// designSeed is the seed of a property: the design's digest and its path —
+// and KIT_SEED when kit test -seed sets it.
 func designSeed(path string) uint64 {
 	h := fnv.New64a()
-	_, _ = h.Write([]byte(designDigest + "|" + path))
+	_, _ = h.Write([]byte(designDigest + "|" + path + "|" + os.Getenv("KIT_SEED")))
 	return h.Sum64()
 }
 

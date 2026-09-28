@@ -14,6 +14,7 @@ build:
 design:
 	kit gen -check
 	kit check
+	kit test
 
 vet:
 	go vet ./...

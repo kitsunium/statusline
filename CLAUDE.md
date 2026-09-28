@@ -10,7 +10,8 @@ the only link.
 `design/` is law on the structure (ADR 0010 of platform): components,
 exported types and functions, use cases, ports, which component imports
 which, the links each body makes, the wiring of each process role. Bodies
-are free. `kit gen` (platform, pinned in CI by `vars.KIT_REF`) writes
+are free. `kit gen` (platform, version pinned by `kit.version`, read by the
+CI and by kit's own toolchain switch) writes
 `*_gen.go` / `*_gen_test.go` — never edit them — and, once, the skeleton of
 each hand-written twin in `<name>.go`. Twins live in those files: `kit gen`
 recreates a missing one even when the twin sits elsewhere. `kit gen -check`
@@ -72,7 +73,11 @@ docs/adr           decisions the design's evidence points to
 ## Working here
 
 - Every go build/test/vet through `~/.local/bin/lourd`.
-- `make test` (race), `make design` (kit gen -check, kit check),
+- `make test` (race), `make design` (kit gen -check, kit check), `kit test`
+  (tests per component),
   `make parity` (88 black-box goldens must pass), `make latency`.
+- `kit harness install` writes the kit hooks into `.claude/settings.json`
+  (generated files refused to Write/Edit, a digest check on Stop); it is a
+  local comfort, not committed — the CI is the authority (D7).
 - Test data is synthetic only: the repository is public.
 - Commits: conventional, author Kodflow, no AI attribution (post-commit gate).
