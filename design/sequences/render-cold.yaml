@@ -1,0 +1,16 @@
+apiVersion: kit.kitsunium/design/v1
+kind: Sequence
+metadata:
+  name: render-cold
+spec:
+  description: A redraw with no daemon (first redraw, after an update, after eviction). The line comes from the cache within 50 ms; the daemon is started for the next one.
+  participants: [actor/host, render/component/cli, render/component/show, render/component/daemonlink, collect/component/daemon]
+  steps:
+    - {from: actor/host, to: render/component/cli, call: Run, mode: sync}
+    - {from: render/component/cli, to: render/component/show, call: ShowStatusLine, mode: sync}
+    - {from: render/component/show, to: render/port/snapshot-source@v1, call: Snapshot, mode: sync}
+    - {from: render/component/daemonlink, to: collect/component/daemon, call: "dial (bounded, fails)", mode: sync}
+    - {from: render/component/daemonlink, to: render/component/daemonlink, call: "read <instance>/cache/<key>.json", mode: sync}
+    - {from: render/component/daemonlink, to: collect/component/daemon, call: "start `statusline daemon` (os.Executable, detached)", mode: async}
+    - {from: render/component/show, to: render/component/powerline, call: Render, mode: sync}
+  test: render/daemonlink.TestSequenceRenderCold

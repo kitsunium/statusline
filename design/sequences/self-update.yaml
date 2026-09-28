@@ -1,0 +1,17 @@
+apiVersion: kit.kitsunium/design/v1
+kind: Sequence
+metadata:
+  name: self-update
+spec:
+  description: Silent update (D11), done by the daemon, never with elevation.
+  participants: [collect/component/daemon, collect/component/update, external/releases]
+  steps:
+    - {from: collect/component/daemon, to: collect/component/update, call: CheckUpdate, mode: sync, when: "hourly"}
+    - {from: collect/component/update, to: collect/port/update-store@v1, call: LoadUpdate, mode: sync}
+    - {from: collect/component/update, to: collect/port/release-source@v1, call: Latest, mode: sync}
+    - {from: collect/component/update, to: collect/port/release-source@v1, call: "Install (keeps <bin>.prev)", mode: sync, when: "newer and not bad_version"}
+    - {from: collect/component/update, to: collect/port/release-source@v1, call: Probe, mode: sync}
+    - {from: collect/component/update, to: collect/port/release-source@v1, call: Rollback, mode: sync, when: "probe failed"}
+    - {from: collect/component/update, to: collect/port/update-store@v1, call: SaveUpdate, mode: sync}
+    - {from: collect/component/daemon, to: collect/component/daemon, call: "stop after answering in-flight requests", mode: sync, when: "installed"}
+  test: collect/update.TestSequenceSelfUpdate

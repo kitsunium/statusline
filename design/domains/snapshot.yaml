@@ -1,0 +1,136 @@
+# What the daemon collects for one session and the client renders: shared by
+# both roles through the inter-process contract, hence a library.
+apiVersion: kit.kitsunium/design/v1
+kind: Domain
+metadata:
+  name: snapshot
+spec:
+  components:
+    - id: snapshot/component/snapshot
+      role: library
+      package: snapshot
+      uses: [quota/component/quota]
+
+  valueObjects:
+    - id: snapshot/vo/git-status
+      name: GitStatus
+      fields:
+        - {name: Branch, type: string, tag: 'json:"branch,omitempty"'}
+        - {name: Modified, type: int, tag: 'json:"modified,omitempty"'}
+        - {name: Untracked, type: int, tag: 'json:"untracked,omitempty"'}
+        - {name: Worktrees, type: int, tag: 'json:"worktrees,omitempty"'}
+      methods:
+        - {name: IsInRepo, signature: "IsInRepo() bool", receiver: value}
+    - id: snapshot/vo/changes
+      name: Changes
+      fields:
+        - {name: Added, type: int, tag: 'json:"added,omitempty"'}
+        - {name: Removed, type: int, tag: 'json:"removed,omitempty"'}
+      methods:
+        - {name: HasChanges, signature: "HasChanges() bool", receiver: value}
+        - {name: HasAdded, signature: "HasAdded() bool", receiver: value}
+        - {name: HasRemoved, signature: "HasRemoved() bool", receiver: value}
+    - id: snapshot/vo/mcp-source
+      name: MCPSource
+      underlying: string
+      values: {MCPSourceUnknown: "", MCPSourceManaged: managed, MCPSourceCLI: cli, MCPSourceLocal: local, MCPSourceProject: project, MCPSourceUser: user, MCPSourcePlugin: plugin}
+    - id: snapshot/vo/mcp-server
+      name: MCPServer
+      fields:
+        - {name: Name, type: string, tag: 'json:"name"'}
+        - {name: Enabled, type: bool, tag: 'json:"enabled,omitempty"'}
+        - {name: Plugin, type: string, tag: 'json:"plugin,omitempty"'}
+        - {name: Source, type: MCPSource, tag: 'json:"source,omitempty"'}
+        - {name: Busy, type: bool, tag: 'json:"busy,omitempty"'}
+    - id: snapshot/vo/mcp-servers
+      name: MCPServers
+      underlying: "[]MCPServer"
+      methods:
+        - {name: WithSource, signature: "WithSource(src MCPSource) MCPServers", receiver: value}
+        - {name: WithBusy, signature: "WithBusy(keys []string) MCPServers", receiver: value}
+      properties: [snapshot/property/with-busy-keeps-servers]
+    - id: snapshot/vo/task-status
+      name: TaskStatus
+      description: The statuses the task tools write (kept as plain strings on the wire).
+      constantsOnly: true
+      values: {TaskPending: pending, TaskInProgress: in_progress, TaskWaiting: waiting, TaskCompleted: completed}
+    - id: snapshot/vo/task-item
+      name: TaskItem
+      fields:
+        - {name: ID, type: string, tag: 'json:"id"'}
+        - {name: Subject, type: string, tag: 'json:"subject,omitempty"'}
+        - {name: Status, type: string, tag: 'json:"status,omitempty"'}
+    - id: snapshot/vo/task-list
+      name: TaskList
+      fields:
+        - {name: Items, type: "[]TaskItem", tag: 'json:"items,omitempty"'}
+      methods:
+        - {name: Total, signature: "Total() int", receiver: value}
+        - {name: Done, signature: "Done() int", receiver: value}
+        - {name: Active, signature: "Active() int", receiver: value}
+        - {name: Waiting, signature: "Waiting() int", receiver: value}
+        - {name: Headline, signature: "Headline() (string, string)", receiver: value}
+        - {name: Current, signature: "Current() string", receiver: value}
+        - {name: IsActive, signature: "IsActive() bool", receiver: value}
+      properties: [snapshot/property/task-counts-bounded]
+    - id: snapshot/vo/epic
+      name: Epic
+      fields:
+        - {name: ID, type: int, tag: 'json:"id"'}
+        - {name: Title, type: string, tag: 'json:"title,omitempty"'}
+        - {name: Active, type: bool, tag: 'json:"active,omitempty"'}
+        - {name: Tasks, type: TaskList, tag: 'json:"tasks"'}
+        - {name: Subagents, type: int, tag: 'json:"subagents,omitempty"'}
+    - id: snapshot/vo/task-board
+      name: TaskBoard
+      fields:
+        - {name: Epics, type: "[]Epic", tag: 'json:"epics,omitempty"'}
+        - {name: Unattributed, type: int, tag: 'json:"unattributed,omitempty"'}
+      methods:
+        - {name: IsEmpty, signature: "IsEmpty() bool", receiver: value}
+    - id: snapshot/vo/health
+      name: Health
+      underlying: int
+      values: {HealthUnknown: 0, HealthOK: 1, HealthDegraded: 2, HealthDown: 3}
+    - id: snapshot/vo/os
+      name: OS
+      underlying: int
+      values: {OSLinux: 0, OSDarwin: 1, OSWindows: 2, OSUnknown: 3}
+    - id: snapshot/vo/system
+      name: System
+      fields:
+        - {name: OS, type: OS, tag: 'json:"os"'}
+        - {name: IsDocker, type: bool, tag: 'json:"docker,omitempty"'}
+    - id: snapshot/vo/update-notice
+      name: UpdateNotice
+      fields:
+        - {name: Available, type: bool, tag: 'json:"available,omitempty"'}
+        - {name: Version, type: string, tag: 'json:"version,omitempty"'}
+    - id: snapshot/vo/snapshot
+      name: Snapshot
+      description: Everything collected for one session key, as the client renders it.
+      fields:
+        - {name: WorkDir, type: string, tag: 'json:"work_dir,omitempty"'}
+        - {name: Git, type: GitStatus, tag: 'json:"git"'}
+        - {name: Changes, type: Changes, tag: 'json:"changes"'}
+        - {name: MCP, type: MCPServers, tag: 'json:"mcp,omitempty"'}
+        - {name: Tasks, type: TaskBoard, tag: 'json:"tasks"'}
+        - {name: Working, type: bool, tag: 'json:"working,omitempty"'}
+        - {name: System, type: System, tag: 'json:"system"'}
+        - {name: Health, type: Health, tag: 'json:"health,omitempty"'}
+        - {name: API, type: quota.Set, tag: 'json:"api"'}
+        - {name: Update, type: UpdateNotice, tag: 'json:"update"'}
+        - {name: CollectedAt, type: time.Time, tag: 'json:"collected_at"'}
+
+  functions:
+    - {id: snapshot/function/tool-key, name: ToolKey, signature: "ToolKey(name string) string", properties: [snapshot/property/tool-key-charset]}
+    - {id: snapshot/function/classify-health, name: ClassifyHealth, signature: "ClassifyHealth(states []string) Health", properties: [snapshot/property/health-monotonic]}
+
+  constants:
+    - {id: snapshot/const/no-epic, name: NoEpic, type: int, value: "0"}
+
+  properties:
+    - {id: snapshot/property/with-busy-keeps-servers, test: snapshot.TestPropertyWithBusyKeepsServers, description: "WithBusy never drops a server and never changes Enabled of a known one"}
+    - {id: snapshot/property/task-counts-bounded, test: snapshot.TestPropertyTaskCountsBounded, description: "Done+Active+Waiting <= Total"}
+    - {id: snapshot/property/tool-key-charset, test: snapshot.TestPropertyToolKeyCharset, description: "ToolKey output is [A-Za-z0-9_-]* and keeps the rune count"}
+    - {id: snapshot/property/health-monotonic, test: snapshot.TestPropertyHealthMonotonic, description: "adding an impaired component never improves the level"}

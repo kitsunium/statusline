@@ -1,0 +1,1 @@
+{"limits": [{"kind": "five_hour", "group": "session", "percent": 10, "resets_at": "2026-01-01T05:00:00Z"}], "five_hour": null, "seven_day": null}

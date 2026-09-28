@@ -1,0 +1,231 @@
+# The daemon role: collect what the client renders, keep it per session key,
+# keep the network figures fresh without ever hammering an endpoint, and keep
+# the binary up to date silently (D11).
+apiVersion: kit.kitsunium/design/v1
+kind: Domain
+metadata:
+  name: collect
+spec:
+  components:
+    - id: collect/component/state
+      role: domain
+      package: collect/state
+      description: The daemon's state — sessions by key with their eviction, network bookkeeping with the 429 back-off, update bookkeeping with the bad version.
+      uses: [quota/component/quota, snapshot/component/snapshot, ipc/component/ipc]
+    - id: collect/component/gather
+      role: application
+      package: collect/gather
+      uses: [quota/component/quota, snapshot/component/snapshot, ipc/component/ipc, collect/component/state, collect/component/refresh]
+    - id: collect/component/refresh
+      role: application
+      package: collect/refresh
+      uses: [quota/component/quota, snapshot/component/snapshot, collect/component/state]
+    - id: collect/component/update
+      role: application
+      package: collect/update
+      uses: [snapshot/component/snapshot, ipc/component/ipc, collect/component/state]
+    - id: collect/component/daemon
+      role: presentation
+      package: collect/daemon
+      description: >-
+        The daemon role's entry: the instance lock, the private socket with
+        the peer's UID checked, the contract's operations, the loops
+        (refresh every second, eviction, update check hourly), the stop ~60 s
+        after the last request, a bounded log.
+      uses: [ipc/component/ipc, snapshot/component/snapshot, collect/component/state, collect/component/gather, collect/component/refresh, collect/component/update]
+    - {id: collect/component/gitcli, role: adapter, package: collect/gitcli, uses: [snapshot/component/snapshot], implements: [collect/port/repository@v1]}
+    - {id: collect/component/mcpconfig, role: adapter, package: collect/mcpconfig, uses: [snapshot/component/snapshot], implements: [collect/port/mcp-config@v1]}
+    - {id: collect/component/transcripts, role: adapter, package: collect/transcripts, uses: [], implements: [collect/port/mcp-calls@v1, collect/port/workdir@v1]}
+    - {id: collect/component/sessions, role: adapter, package: collect/sessions, uses: [collect/component/state], implements: [collect/port/session-registry@v1]}
+    - {id: collect/component/taskstore, role: adapter, package: collect/taskstore, uses: [snapshot/component/snapshot], implements: [collect/port/task-store@v1]}
+    - {id: collect/component/sysinfo, role: adapter, package: collect/sysinfo, uses: [snapshot/component/snapshot], implements: [collect/port/system-info@v1]}
+    - {id: collect/component/usageapi, role: adapter, package: collect/usageapi, uses: [quota/component/quota, collect/component/state], implements: [collect/port/usage-api@v1], evidence: [usage-endpoint-shape]}
+    - {id: collect/component/credentials, role: adapter, package: collect/credentials, uses: [], implements: [collect/port/token-store@v1]}
+    - {id: collect/component/statuspage, role: adapter, package: collect/statuspage, uses: [snapshot/component/snapshot], implements: [collect/port/status-page@v1], evidence: [status-page-summary-shape]}
+    - {id: collect/component/statefile, role: adapter, package: collect/statefile, uses: [snapshot/component/snapshot, ipc/component/ipc, collect/component/state], implements: [collect/port/network-store@v1, collect/port/snapshot-cache@v1, collect/port/update-store@v1]}
+    - {id: collect/component/releases, role: adapter, package: collect/releases, uses: [collect/component/state], implements: [collect/port/release-source@v1]}
+    - {id: collect/component/systemclock, role: adapter, package: collect/systemclock, uses: [], implements: [collect/port/clock@v1]}
+
+  ports:
+    - {id: collect/port/repository@v1, direction: outbound, name: Repository, methods: [{name: Status, signature: "Status(dir string) snapshot.GitStatus"}, {name: DiffStats, signature: "DiffStats(dir string) snapshot.Changes"}]}
+    - {id: collect/port/mcp-config@v1, direction: outbound, name: MCPConfig, methods: [{name: Servers, signature: "Servers(projectDir string, hostPID int) snapshot.MCPServers"}]}
+    - {id: collect/port/mcp-calls@v1, direction: outbound, name: MCPCalls, methods: [{name: Busy, signature: "Busy(transcriptPath, sessionID string, now time.Time) []string"}]}
+    - {id: collect/port/workdir@v1, direction: outbound, name: WorkDir, methods: [{name: Dir, signature: "Dir(transcriptPath, fallback string) string"}]}
+    - {id: collect/port/session-registry@v1, direction: outbound, name: SessionRegistry, methods: [{name: Lookup, signature: "Lookup(sessionID string) (state.HostSession, bool)"}]}
+    - {id: collect/port/task-store@v1, direction: outbound, name: TaskStore, methods: [{name: Board, signature: "Board(sessionID, listID string, now time.Time) snapshot.TaskBoard"}]}
+    - {id: collect/port/system-info@v1, direction: outbound, name: SystemInfo, methods: [{name: Info, signature: "Info() snapshot.System"}]}
+    - id: collect/port/usage-api@v1
+      direction: outbound
+      name: UsageAPI
+      methods: [{name: Fetch, signature: "Fetch(ctx context.Context, token string) (quota.Set, error)"}]
+      errors: [collect/error/rate-limited, collect/error/usage-unavailable]
+    - {id: collect/port/token-store@v1, direction: outbound, name: TokenStore, description: "read on every call, never cached, never refreshed, never sent anywhere but the usage API", methods: [{name: Token, signature: "Token(ctx context.Context) (string, error)"}]}
+    - {id: collect/port/status-page@v1, direction: outbound, name: StatusPage, methods: [{name: Fetch, signature: "Fetch(ctx context.Context) (snapshot.Health, error)"}]}
+    - {id: collect/port/network-store@v1, direction: outbound, name: NetworkStore, methods: [{name: LoadNetwork, signature: "LoadNetwork() (state.Network, error)"}, {name: SaveNetwork, signature: "SaveNetwork(n state.Network) error"}]}
+    - {id: collect/port/snapshot-cache@v1, direction: outbound, name: SnapshotCache, methods: [{name: SaveSnapshot, signature: "SaveSnapshot(key ipc.Key, snap snapshot.Snapshot) error"}]}
+    - {id: collect/port/update-store@v1, direction: outbound, name: UpdateStore, methods: [{name: LoadUpdate, signature: "LoadUpdate() (state.Update, error)"}, {name: SaveUpdate, signature: "SaveUpdate(u state.Update) error"}]}
+    - id: collect/port/release-source@v1
+      direction: outbound
+      name: ReleaseSource
+      methods:
+        - {name: Latest, signature: "Latest(ctx context.Context) (state.Release, error)"}
+        - {name: Install, signature: "Install(ctx context.Context, rel state.Release) error"}
+        - {name: Probe, signature: "Probe(ctx context.Context) error"}
+        - {name: Rollback, signature: "Rollback(ctx context.Context) error"}
+    - {id: collect/port/clock@v1, direction: outbound, name: Clock, methods: [{name: Now, signature: "Now() time.Time"}]}
+
+  errors:
+    - {id: collect/error/rate-limited, name: RateLimited, code: statusline_rate_limited, fields: [{name: RetryAfter, type: time.Duration}], description: "HTTP 429; RetryAfter is the server's, else the back-off's"}
+    - {id: collect/error/usage-unavailable, name: ErrUsageUnavailable, code: statusline_usage_unavailable}
+
+  entities:
+    - id: collect/entity/registry
+      component: collect/component/state
+      name: Registry
+      description: Session states by key (D5 — session, transcript, worktree). A key unused for EvictAfter is evicted; the daemon stops when none is left.
+      constructors: [{name: NewRegistry, signature: "NewRegistry() *Registry"}]
+      methods:
+        - {name: Get, signature: "Get(key ipc.Key, now time.Time) (snapshot.Snapshot, bool)", receiver: pointer}
+        - {name: Put, signature: "Put(key ipc.Key, snap snapshot.Snapshot, now time.Time)", receiver: pointer}
+        - {name: Touch, signature: "Touch(key ipc.Key, now time.Time)", receiver: pointer}
+        - {name: Evict, signature: "Evict(now time.Time) int", receiver: pointer}
+        - {name: Len, signature: "Len() int", receiver: pointer}
+        - {name: LastRequest, signature: "LastRequest() time.Time", receiver: pointer}
+      properties: [collect/property/evict-idle-only]
+    - id: collect/entity/network
+      component: collect/component/state
+      name: Network
+      description: Network bookkeeping, persisted so a restarted daemon keeps honouring a 429.
+      fields:
+        - {name: Usage, type: quota.Set, tag: 'json:"usage"'}
+        - {name: HasUsage, type: bool, tag: 'json:"has_usage,omitempty"'}
+        - {name: UsageFetchedAt, type: time.Time, tag: 'json:"usage_fetched_at,omitzero"'}
+        - {name: UsageAttemptAt, type: time.Time, tag: 'json:"usage_attempt_at,omitzero"'}
+        - {name: UsageRetryAfter, type: time.Time, tag: 'json:"usage_retry_after,omitzero"'}
+        - {name: UsageFailures, type: int, tag: 'json:"usage_failures,omitempty"'}
+        - {name: UsageStatus, type: int, tag: 'json:"usage_status,omitempty"'}
+        - {name: Health, type: snapshot.Health, tag: 'json:"health,omitempty"'}
+        - {name: HealthFetchedAt, type: time.Time, tag: 'json:"health_fetched_at,omitzero"'}
+        - {name: HealthAttemptAt, type: time.Time, tag: 'json:"health_attempt_at,omitzero"'}
+      methods:
+        - {name: UsageDue, signature: "UsageDue(now time.Time) bool", receiver: value}
+        - {name: HealthDue, signature: "HealthDue(now time.Time) bool", receiver: value}
+        - {name: CurrentHealth, signature: "CurrentHealth(now time.Time) snapshot.Health", receiver: value}
+        - {name: RecordUsage, signature: "RecordUsage(set quota.Set, now time.Time) Network", receiver: value}
+        - {name: RecordUsageFailure, signature: "RecordUsageFailure(status int, retryAfter time.Duration, now time.Time) Network", receiver: value}
+        - {name: RecordHealth, signature: "RecordHealth(h snapshot.Health, now time.Time) Network", receiver: value}
+        - {name: RecordHealthFailure, signature: "RecordHealthFailure(now time.Time) Network", receiver: value}
+      properties: [collect/property/never-before-retry-after, collect/property/backoff-bounded]
+    - id: collect/entity/update
+      component: collect/component/state
+      name: Update
+      fields:
+        - {name: CheckedAt, type: time.Time, tag: 'json:"checked_at,omitzero"'}
+        - {name: BadVersion, type: string, tag: 'json:"bad_version,omitempty"'}
+        - {name: Failures, type: int, tag: 'json:"failures,omitempty"'}
+        - {name: Installed, type: string, tag: 'json:"installed,omitempty"'}
+      methods:
+        - {name: Due, signature: "Due(now time.Time) bool", receiver: value}
+
+  valueObjects:
+    - {id: collect/vo/host-session, component: collect/component/state, name: HostSession, fields: [{name: PID, type: int}, {name: Working, type: bool}]}
+    - {id: collect/vo/release, component: collect/component/state, name: Release, fields: [{name: Version, type: string}, {name: Asset, type: string}]}
+
+  constants:
+    - {id: collect/const/evict-after, component: collect/component/state, name: EvictAfter, type: time.Duration, value: "60 * time.Second"}
+    - {id: collect/const/freshness, component: collect/component/state, name: Freshness, type: time.Duration, value: "750 * time.Millisecond"}
+    - {id: collect/const/usage-ttl, component: collect/component/state, name: UsageTTL, type: time.Duration, value: "60 * time.Second"}
+    - {id: collect/const/health-ttl, component: collect/component/state, name: HealthTTL, type: time.Duration, value: "2 * time.Minute"}
+    - {id: collect/const/health-max-age, component: collect/component/state, name: HealthMaxAge, type: time.Duration, value: "15 * time.Minute"}
+    - {id: collect/const/update-interval, component: collect/component/state, name: UpdateInterval, type: time.Duration, value: "time.Hour"}
+
+  useCases:
+    - id: collect/usecase/collect-snapshot
+      component: collect/component/gather
+      name: CollectSnapshot
+      input: {name: CollectInput, fields: [{name: Key, type: ipc.Key}]}
+      output: {name: CollectOutput, fields: [{name: Snapshot, type: snapshot.Snapshot}, {name: Collected, type: bool}]}
+      links:
+        - {port: collect/port/clock@v1, mode: sync}
+        - {port: collect/port/workdir@v1, mode: sync}
+        - {port: collect/port/session-registry@v1, mode: sync}
+        - {port: collect/port/repository@v1, mode: sync, concurrent: true}
+        - {port: collect/port/mcp-config@v1, mode: sync, concurrent: true}
+        - {port: collect/port/mcp-calls@v1, mode: sync, concurrent: true}
+        - {port: collect/port/task-store@v1, mode: sync, concurrent: true}
+        - {port: collect/port/system-info@v1, mode: sync, concurrent: true}
+        - {port: collect/port/snapshot-cache@v1, mode: sync}
+        - {usecase: collect/usecase/latest-network, mode: sync}
+      scenarios:
+        success:
+          - {id: fresh-hit, description: "a snapshot younger than Freshness is served as is, no port called but the clock"}
+          - {id: collect, description: "an older or missing one is collected: git in the working directory, MCP in the session directory, then cached"}
+        refusal: []
+    - id: collect/usecase/refresh-network
+      component: collect/component/refresh
+      name: RefreshNetwork
+      input: {name: RefreshInput, fields: [{name: Force, type: bool}]}
+      output: {name: RefreshOutput, fields: [{name: UsageFetched, type: bool}, {name: HealthFetched, type: bool}]}
+      links:
+        - {port: collect/port/clock@v1, mode: sync}
+        - {port: collect/port/network-store@v1, mode: sync}
+        - {port: collect/port/token-store@v1, mode: sync}
+        - {port: collect/port/usage-api@v1, mode: sync}
+        - {port: collect/port/status-page@v1, mode: sync}
+      evidence: [usage-endpoint-shape, rate-limit-decision]
+      scenarios:
+        success:
+          - {id: due, description: "usage older than UsageTTL and health older than HealthTTL are fetched and persisted"}
+          - {id: not-due, description: "nothing is fetched before its TTL"}
+        refusal:
+          - {id: rate-limited, description: "a 429 persists RetryAfter; no usage request before it, even across a restart"}
+          - {id: no-token, description: "without a token the usage API is not called and the last payload is kept"}
+          - {id: health-stale, description: "a summary older than HealthMaxAge reads as unknown"}
+    - id: collect/usecase/latest-network
+      component: collect/component/refresh
+      name: LatestNetwork
+      input: {name: LatestInput, fields: []}
+      output: {name: LatestOutput, fields: [{name: Usage, type: quota.Set}, {name: HasUsage, type: bool}, {name: Health, type: snapshot.Health}, {name: Network, type: state.Network}]}
+      links: [{port: collect/port/clock@v1, mode: sync}]
+      scenarios: {success: [{id: served, description: "the last fetched figures, health unknown past HealthMaxAge"}], refusal: []}
+    - id: collect/usecase/check-update
+      component: collect/component/update
+      name: CheckUpdate
+      input: {name: UpdateInput, fields: [{name: CurrentVersion, type: string}, {name: Disabled, type: bool}]}
+      output: {name: UpdateOutput, fields: [{name: Notice, type: snapshot.UpdateNotice}, {name: Installed, type: bool}]}
+      links:
+        - {port: collect/port/clock@v1, mode: sync}
+        - {port: collect/port/update-store@v1, mode: sync}
+        - {port: collect/port/release-source@v1, mode: sync}
+      scenarios:
+        success:
+          - {id: installed, description: "a newer signed release is installed with <bin>.prev kept, the probe passes, the daemon stops so the next client starts the new binary"}
+          - {id: up-to-date, description: "nothing newer: nothing written but CheckedAt"}
+        refusal:
+          - {id: disabled, description: "a development build or STATUSLINE_NO_SELF_UPDATE: no request at all"}
+          - {id: bad-version, description: "the release recorded as bad_version is never installed again"}
+          - {id: probe-fails, description: "the new binary fails its probe: <bin>.prev is restored and the version recorded bad"}
+
+  inbound:
+    - id: collect/inbound/daemon
+      component: collect/component/daemon
+      kind: listener
+      name: Run
+      signature: "Run(in RunInput) int"
+      input:
+        name: RunInput
+        fields:
+          - {name: Version, type: string}
+          - {name: Instance, type: ipc.Instance}
+          - {name: Getenv, type: "func(string) string"}
+      serves: ipc/contract/daemon@v1
+      calls:
+        - {usecase: collect/usecase/collect-snapshot, on: snapshot}
+        - {usecase: collect/usecase/latest-network, on: status}
+        - {usecase: collect/usecase/refresh-network, on: tick}
+        - {usecase: collect/usecase/check-update, on: tick}
+
+  properties:
+    - {id: collect/property/evict-idle-only, test: state.TestPropertyEvictIdleOnly, description: "Evict removes exactly the keys untouched for EvictAfter"}
+    - {id: collect/property/never-before-retry-after, test: state.TestPropertyNeverBeforeRetryAfter, description: "UsageDue is false before UsageRetryAfter, whatever happened since"}
+    - {id: collect/property/backoff-bounded, test: state.TestPropertyBackoffBounded, description: "the back-off after N failures is within [UsageTTL, 1 h] and non-decreasing in N"}

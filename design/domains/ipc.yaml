@@ -1,0 +1,120 @@
+# The contract between the two roles of the binary (D22): the only way the
+# client and the daemon talk. Versioned; a major bump is a new contract id.
+apiVersion: kit.kitsunium/design/v1
+kind: Domain
+metadata:
+  name: ipc
+spec:
+  components:
+    - id: ipc/component/ipc
+      role: library
+      package: ipc
+      uses: [snapshot/component/snapshot]
+
+  contracts:
+    - id: ipc/contract/daemon@v1
+      name: statusline.ipc/v1
+      transport: length-prefixed JSON frames (4-byte big-endian length, at most 1 MiB) over a private stream socket
+      handshake: >-
+        Each side sends Hello first. The client refuses a daemon whose
+        Protocol major differs; it asks an older daemon (Version lower than
+        its own) to stop and starts its own; it never stops a newer one — it
+        renders from the cache instead.
+      operations:
+        - {op: snapshot, request: Request, response: Response, description: "the snapshot of a session key; collected now when older than the freshness"}
+        - {op: status, request: Request, response: Response, description: "the daemon's Status"}
+        - {op: stop, request: Request, response: Response, description: "the daemon answers then exits"}
+      evidence: [ipc-contract-decision]
+
+  constants:
+    - {id: ipc/const/protocol, name: Protocol, type: string, value: '"statusline.ipc/v1"'}
+    - {id: ipc/const/max-frame, name: MaxFrame, type: int, value: "1 << 20"}
+    - {id: ipc/const/op-snapshot, name: OpSnapshot, type: string, value: '"snapshot"'}
+    - {id: ipc/const/op-status, name: OpStatus, type: string, value: '"status"'}
+    - {id: ipc/const/op-stop, name: OpStop, type: string, value: '"stop"'}
+
+  valueObjects:
+    - id: ipc/vo/hello
+      name: Hello
+      fields:
+        - {name: Protocol, type: string, tag: 'json:"protocol"'}
+        - {name: Version, type: string, tag: 'json:"version"'}
+        - {name: PID, type: int, tag: 'json:"pid"'}
+    - id: ipc/vo/key
+      name: Key
+      description: What a session's state is kept by (D5 — session, transcript, worktree) plus the task list the client's environment names.
+      fields:
+        - {name: SessionID, type: string, tag: 'json:"session_id,omitempty"'}
+        - {name: TranscriptPath, type: string, tag: 'json:"transcript_path,omitempty"'}
+        - {name: SessionDir, type: string, tag: 'json:"session_dir,omitempty"'}
+        - {name: TaskListID, type: string, tag: 'json:"task_list_id,omitempty"'}
+      methods:
+        - {name: Hash, signature: "Hash() string", receiver: value}
+      properties: [ipc/property/key-hash-stable]
+    - id: ipc/vo/request
+      name: Request
+      fields:
+        - {name: Op, type: string, tag: 'json:"op"'}
+        - {name: Key, type: Key, tag: 'json:"key"'}
+    - id: ipc/vo/network
+      name: Network
+      description: Persisted network bookkeeping, reported by status.
+      fields:
+        - {name: UsageFetchedAt, type: time.Time, tag: 'json:"usage_fetched_at,omitzero"'}
+        - {name: UsageAttemptAt, type: time.Time, tag: 'json:"usage_attempt_at,omitzero"'}
+        - {name: UsageRetryAfter, type: time.Time, tag: 'json:"usage_retry_after,omitzero"'}
+        - {name: UsageStatus, type: int, tag: 'json:"usage_status,omitempty"'}
+        - {name: HealthFetchedAt, type: time.Time, tag: 'json:"health_fetched_at,omitzero"'}
+        - {name: HealthAttemptAt, type: time.Time, tag: 'json:"health_attempt_at,omitzero"'}
+    - id: ipc/vo/status
+      name: Status
+      fields:
+        - {name: Version, type: string, tag: 'json:"version"'}
+        - {name: PID, type: int, tag: 'json:"pid"'}
+        - {name: Executable, type: string, tag: 'json:"executable"'}
+        - {name: StartedAt, type: time.Time, tag: 'json:"started_at"'}
+        - {name: LastRequest, type: time.Time, tag: 'json:"last_request,omitzero"'}
+        - {name: Sessions, type: int, tag: 'json:"sessions"'}
+        - {name: Network, type: Network, tag: 'json:"network"'}
+        - {name: BadVersion, type: string, tag: 'json:"bad_version,omitempty"'}
+    - id: ipc/vo/response
+      name: Response
+      fields:
+        - {name: Snapshot, type: "*snapshot.Snapshot", tag: 'json:"snapshot,omitempty"'}
+        - {name: Status, type: "*Status", tag: 'json:"status,omitempty"'}
+        - {name: Error, type: string, tag: 'json:"error,omitempty"'}
+    - id: ipc/vo/instance
+      name: Instance
+      description: Where one daemon instance lives, derived from (UID, config dir, executable) by both roles.
+      fields:
+        - {name: Dir, type: string}
+        - {name: Socket, type: string}
+        - {name: Lock, type: string}
+        - {name: Cache, type: string}
+        - {name: State, type: string}
+        - {name: Log, type: string}
+      methods:
+        - {name: CachePath, signature: "CachePath(key Key) string", receiver: value}
+    - id: ipc/vo/locate-input
+      name: LocateInput
+      fields:
+        - {name: RuntimeDir, type: string}
+        - {name: UID, type: int}
+        - {name: ConfigDir, type: string}
+        - {name: Executable, type: string}
+
+  functions:
+    - {id: ipc/function/locate, name: Locate, signature: "Locate(in LocateInput) Instance", properties: [ipc/property/locate-distinct]}
+    - {id: ipc/function/write-frame, name: WriteFrame, signature: "WriteFrame(w io.Writer, v any) error"}
+    - {id: ipc/function/read-frame, name: ReadFrame, signature: "ReadFrame(r io.Reader, v any) error", properties: [ipc/property/frame-roundtrip]}
+    - {id: ipc/function/compare-versions, name: CompareVersions, signature: "CompareVersions(a, b string) int", properties: [ipc/property/versions-order]}
+    - {id: ipc/function/compatible, name: Compatible, signature: "Compatible(protocol string) bool"}
+
+  errors:
+    - {id: ipc/error/frame-too-large, name: ErrFrameTooLarge, code: statusline_ipc_frame_too_large}
+
+  properties:
+    - {id: ipc/property/key-hash-stable, test: ipc.TestPropertyKeyHashStable, description: "equal keys hash equal; a changed field changes the hash"}
+    - {id: ipc/property/locate-distinct, test: ipc.TestPropertyLocateDistinct, description: "two different (config dir, executable) pairs never share a socket"}
+    - {id: ipc/property/frame-roundtrip, test: ipc.TestPropertyFrameRoundtrip, description: "ReadFrame(WriteFrame(v)) == v; a frame over MaxFrame is refused"}
+    - {id: ipc/property/versions-order, test: ipc.TestPropertyVersionsOrder, description: "CompareVersions is antisymmetric and transitive over semver strings"}

@@ -1,0 +1,84 @@
+# The product: one Go module, one binary, two process roles (D5, D22).
+# Drafted against ADR 0010 (platform) before `kit design schema` publishes
+# design/v1's JSON Schema; field names follow the ADR's enumeration.
+apiVersion: kit.kitsunium/design/v1
+kind: Product
+metadata:
+  name: statusline
+  description: >-
+    A two-line Powerline status line for the host CLI. The client renders on
+    every redraw; a per-instance daemon collects what is slow or shared (git,
+    MCP configuration, transcripts, tasks, the usage API, the status page,
+    self-update) and answers the client over a private socket.
+spec:
+  module: github.com/kitsunium/statusline
+  go: "1.27.1"
+  closed: true
+  exceptions: []          # a ratchet: this list may only shrink (kit check --base)
+
+  context:
+    actors:
+      - id: host
+        description: The host CLI. Runs `statusline` on every redraw with the session JSON on stdin and COLUMNS in the environment; reads line one and line two from stdout.
+      - id: user
+        description: Reads the line; sets STATUSLINE_* variables; runs `statusline daemon status|stop`.
+    externalSystems:
+      - id: usage-api
+        description: OAuth usage endpoint of the model provider (quotas, credits). Rate limited (HTTP 429).
+        evidence: [usage-endpoint-shape]
+      - id: status-page
+        description: Public Statuspage summary of the provider's services.
+        evidence: [status-page-summary-shape]
+      - id: releases
+        description: Signed releases of kitsunium/statusline, consumed through the SDK selfupdate.
+      - id: git
+        description: The git CLI, run in the directory the session works in.
+      - id: host-files
+        description: Files the host writes under its configuration directory (global config, settings, plugin registry, session registry, transcripts, task lists).
+
+  binaries:
+    - id: statusline
+      package: cmd/statusline
+      roles:
+        - id: client
+          description: The process the host starts on every redraw. Default role.
+          entry: render/component/cli
+          selectedBy: "any argv except exactly [daemon]"
+          package: roles/client
+          bindings:
+            render/port/snapshot-source@v1: render/component/daemonlink
+            render/port/daemon-control@v1: render/component/daemonlink
+            render/port/clock@v1: render/component/systemclock
+          latencyBudget:
+            warm: {p50: 15ms, p99: 40ms}
+            coldFromCache: 50ms
+        - id: daemon
+          description: >-
+            `statusline daemon`, started by a client with os.Executable(). One
+            instance per (UID, host configuration directory, executable path),
+            under a lock; stops ~60 s after its last request, and after an
+            installed update.
+          entry: collect/component/daemon
+          selectedBy: "argv == [daemon]"
+          package: roles/daemon
+          bindings:
+            collect/port/repository@v1: collect/component/gitcli
+            collect/port/mcp-config@v1: collect/component/mcpconfig
+            collect/port/mcp-calls@v1: collect/component/transcripts
+            collect/port/workdir@v1: collect/component/transcripts
+            collect/port/session-registry@v1: collect/component/sessions
+            collect/port/task-store@v1: collect/component/taskstore
+            collect/port/system-info@v1: collect/component/sysinfo
+            collect/port/usage-api@v1: collect/component/usageapi
+            collect/port/token-store@v1: collect/component/credentials
+            collect/port/status-page@v1: collect/component/statuspage
+            collect/port/network-store@v1: collect/component/statefile
+            collect/port/snapshot-cache@v1: collect/component/statefile
+            collect/port/update-store@v1: collect/component/statefile
+            collect/port/release-source@v1: collect/component/releases
+            collect/port/clock@v1: collect/component/systemclock
+      interProcess:
+        - from: client
+          to: daemon
+          contract: ipc/contract/daemon@v1
+          transport: private Unix socket (0700 directory, peer UID checked); Windows named pipe with an owner-only DACL
