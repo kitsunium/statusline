@@ -15,7 +15,7 @@ func TestClassify(t *testing.T) {
 	tests := []struct {
 		name string
 		body string
-		want int
+		want snapshot.Health
 	}{
 		{name: "all up, government ignored", body: `{"components":[{"name":"claude.ai","status":"operational"},{"name":"CLI","status":"operational"},{"name":"Claude for Government","status":"major_outage"}]}`, want: snapshot.HealthOK},
 		{name: "one partial", body: `{"components":[{"name":"claude.ai","status":"partial_outage"},{"name":"CLI","status":"operational"}]}`, want: snapshot.HealthDegraded},

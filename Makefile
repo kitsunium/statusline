@@ -2,9 +2,9 @@
 
 BIN := bin/statusline
 
-# VERSION and VENDOR_KEY (base64 ed25519) make a release build; without
+# VERSION and VENDOR_KEY (base64 ed25519) make a release build (design/: binaries[].build); without
 # them the binary is a development build that never updates itself.
-LDFLAGS := -X github.com/kitsunium/statusline/ipc.version=$(VERSION) -X github.com/kitsunium/statusline/collect/releases.vendorKey=$(VENDOR_KEY)
+LDFLAGS := -X main.version=$(VERSION) -X main.vendorKey=$(VENDOR_KEY)
 
 build:
 	@mkdir -p bin

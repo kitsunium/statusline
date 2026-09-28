@@ -7,7 +7,7 @@ import (
 )
 
 func TestMCPServersWithBusy(t *testing.T) {
-	inv := []snapshot.MCPServer{
+	inv := snapshot.MCPServers{
 		{Name: "github", Enabled: true},
 		{Name: "tasks", Enabled: true, Plugin: "kodflow-hooks"},
 		{Name: "claude.ai Docs", Enabled: true},
@@ -29,7 +29,7 @@ func TestMCPServersWithBusy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := snapshot.WithBusy(inv, tt.keys)
+			got := inv.WithBusy(tt.keys)
 			want := map[string]bool{}
 			for _, n := range tt.busy {
 				want[n] = true
@@ -64,18 +64,18 @@ func TestToolKey(t *testing.T) {
 }
 
 func TestMCPServersWithSource(t *testing.T) {
-	servers := []snapshot.MCPServer{{Name: "a"}, {Name: "b", Source: snapshot.MCPSourceUser}}
-	got := snapshot.WithSource(servers, snapshot.MCPSourcePlugin)
+	servers := snapshot.MCPServers{{Name: "a"}, {Name: "b", Source: snapshot.MCPSourceUser}}
+	got := servers.WithSource(snapshot.MCPSourcePlugin)
 	for _, s := range got {
 		if s.Source != snapshot.MCPSourcePlugin {
 			t.Errorf("%s: Source = %q, want plugin", s.Name, s.Source)
 		}
 	}
-	if len(snapshot.WithSource(nil, snapshot.MCPSourceCLI)) != 0 {
+	if len(snapshot.MCPServers(nil).WithSource(snapshot.MCPSourceCLI)) != 0 {
 		t.Error("an empty list stays empty")
 	}
 	// An unknown server added by WithBusy carries no scope
-	busy := snapshot.WithBusy([]snapshot.MCPServer{{Name: "a", Enabled: true, Source: snapshot.MCPSourceCLI}}, []string{"ghost"})
+	busy := snapshot.MCPServers{{Name: "a", Enabled: true, Source: snapshot.MCPSourceCLI}}.WithBusy([]string{"ghost"})
 	if busy[1].Source != snapshot.MCPSourceUnknown {
 		t.Errorf("ghost: Source = %q, want unknown", busy[1].Source)
 	}

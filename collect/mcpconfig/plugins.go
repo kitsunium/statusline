@@ -27,21 +27,21 @@ const (
 // servers come from <installPath>/.mcp.json, wrapped or bare.
 //
 // Returns:
-//   - []snapshot.MCPServer: servers tagged with their plugin, by plugin id order
-func (p *reader) readPluginServers() []snapshot.MCPServer {
+//   - snapshot.MCPServers: servers tagged with their plugin, by plugin id order
+func (p *reader) readPluginServers() snapshot.MCPServers {
 	// Without a config directory there is no plugin registry
 	if p.configDir == "" {
-		return []snapshot.MCPServer{}
+		return snapshot.MCPServers{}
 	}
 	enabled := p.enabledPlugins()
 	// No plugin enabled, nothing to read
 	if len(enabled) == 0 {
-		return []snapshot.MCPServer{}
+		return snapshot.MCPServers{}
 	}
 	var registry installedPlugins
 	// No registry, no installed plugin
 	if !readJSON(filepath.Join(p.configDir, installedPluginsPath), &registry) {
-		return []snapshot.MCPServer{}
+		return snapshot.MCPServers{}
 	}
 
 	ids := make([]string, 0, len(registry.Plugins))
@@ -54,7 +54,7 @@ func (p *reader) readPluginServers() []snapshot.MCPServer {
 	}
 	sort.Strings(ids)
 
-	servers := make([]snapshot.MCPServer, 0, defaultSliceCapacity)
+	servers := make(snapshot.MCPServers, 0, defaultSliceCapacity)
 	// Read each enabled plugin's manifest
 	for _, id := range ids {
 		dir := p.installPath(registry.Plugins[id])

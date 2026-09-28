@@ -27,18 +27,6 @@ func propertyInstanceCachePathInsideCache(t *testing.T, seed uint64) {
 	})
 }
 
-func propertyBuildVersionStable(t *testing.T, seed uint64) {
-	seeded(t, seed)
-	rapid.Check(t, func(t *rapid.T) {
-		if BuildVersion() != BuildVersion() {
-			t.Fatal("BuildVersion changed between calls")
-		}
-		if v := BuildVersion(); v != "" && CompareVersions(v, "v0.0.0") < 0 {
-			t.Fatalf("BuildVersion %q is neither a release nor empty", v)
-		}
-	})
-}
-
 func propertyCompatibleMajorOne(t *testing.T, seed uint64) {
 	seeded(t, seed)
 	rapid.Check(t, func(t *rapid.T) {

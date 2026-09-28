@@ -25,6 +25,6 @@ func newConfig() *Config {
 }
 
 // servers reads one project's servers.
-func (a *Config) servers(_ context.Context, projectDir string, hostPID int) ([]snapshot.MCPServer, error) {
+func (a *Config) servers(_ context.Context, projectDir string, hostPID int) (snapshot.MCPServers, error) {
 	return newReader(&a.config, projectDir, hostPID).servers(), nil
 }

@@ -54,7 +54,7 @@ func (f *fixture) cmdline(t *testing.T, p *reader, pid int, args ...string) {
 }
 
 // names renders servers as "name" or "name(off)" for compact assertions.
-func names(servers []snapshot.MCPServer) string {
+func names(servers snapshot.MCPServers) string {
 	out := make([]string, 0, len(servers))
 	for _, s := range servers {
 		n := s.Name
@@ -483,7 +483,7 @@ func TestConvertServers(t *testing.T) {
 func TestServersSourceTags(t *testing.T) {
 	f, p := newFixture(t)
 	everywhere(t, f, p, false)
-	want := map[string]string{
+	want := map[string]snapshot.MCPSource{
 		"managed": snapshot.MCPSourceManaged,
 		"cli":     snapshot.MCPSourceCLI,
 		"dup":     snapshot.MCPSourceCLI,

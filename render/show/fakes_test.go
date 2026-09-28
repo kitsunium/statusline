@@ -35,28 +35,7 @@ func (s *source) Snapshot(_ context.Context, key ipc.Key) (snapshot.Snapshot, st
 	return s.snap, s.origin, s.err
 }
 
-// control is a DaemonControl with or without a daemon.
-type control struct {
-	running bool
-	stopped bool
-}
-
 var errNoDaemon = errors.New("no daemon")
-
-func (c *control) Status(context.Context) (ipc.Status, error) {
-	if !c.running {
-		return ipc.Status{}, errNoDaemon
-	}
-	return ipc.Status{Version: "v1.2.3", Sessions: 2}, nil
-}
-
-func (c *control) Stop(context.Context) error {
-	if !c.running {
-		return errNoDaemon
-	}
-	c.stopped = true
-	return nil
-}
 
 // warmSource is a daemon's snapshot whose API figures stdin must beat.
 func warmSource() *source {

@@ -6,7 +6,7 @@ package snapshot
 
 // classifyHealth: one impaired component is degraded, two or one major
 // outage is down; maintenance does not count; nothing to judge is unknown.
-func classifyHealth(states []string) int {
+func classifyHealth(states []string) Health {
 	if len(states) == 0 {
 		return HealthUnknown
 	}

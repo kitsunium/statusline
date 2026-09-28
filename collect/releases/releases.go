@@ -15,7 +15,6 @@ import (
 	"github.com/kitsunium/sdk/pkg/v1/selfupdate"
 
 	"github.com/kitsunium/statusline/collect/state"
-	"github.com/kitsunium/statusline/ipc"
 )
 
 const (
@@ -39,11 +38,6 @@ type updater interface {
 	Upgrade() (selfupdate.Update, error)
 }
 
-// vendorKey is the base64 ed25519 key releases are signed with, set at
-// release time: -ldflags "-X github.com/kitsunium/statusline/collect/releases.vendorKey=…".
-// Without it nothing is ever installed.
-var vendorKey string
-
 // config is what a build knows about itself.
 type config struct {
 	// Version is the running release; empty for a development build.
@@ -60,10 +54,12 @@ type releases struct {
 	svc updater
 }
 
-// newReleases reads the build's identity.
-func newReleases() *Releases {
+// newReleases takes the build's identity: its version, and the base64
+// ed25519 key releases are signed with (-ldflags -X main.vendorKey=…);
+// without a key nothing is ever installed.
+func newReleases(version string, vendorKey string) *Releases {
 	key, _ := base64.StdEncoding.DecodeString(vendorKey)
-	return newReleasesWith(config{Version: ipc.BuildVersion(), Executable: executable(), VendorKey: key})
+	return newReleasesWith(config{Version: version, Executable: executable(), VendorKey: key})
 }
 
 // newReleasesWith builds on an explicit identity.

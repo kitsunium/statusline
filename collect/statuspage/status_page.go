@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"os"
+
+	"github.com/kitsunium/statusline/snapshot"
 )
 
 // statusPage is where the summary is fetched from, and how.
@@ -20,4 +22,4 @@ type doer interface {
 func newStatusPage() *StatusPage { return &StatusPage{newPage(os.Getenv)} }
 
 // fetch returns the aggregate level; an error leaves the caller's last one.
-func (a *StatusPage) fetch(ctx context.Context) (int, error) { return a.get(ctx) }
+func (a *StatusPage) fetch(ctx context.Context) (snapshot.Health, error) { return a.get(ctx) }

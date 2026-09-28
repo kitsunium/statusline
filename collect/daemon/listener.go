@@ -7,6 +7,7 @@ package daemon
 import (
 	"context"
 	"errors"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -47,6 +48,7 @@ type listener struct {
 	version    string
 	executable string
 	getenv     func(string) string
+	stdout     io.Writer
 
 	started  time.Time
 	log      *boundedLog
@@ -58,19 +60,22 @@ type listener struct {
 }
 
 // newListener locates the instance of this executable.
-func newListener(collectSnapshot collector.CollectSnapshot, latestNetwork collector.LatestNetwork, refreshNetwork collector.RefreshNetwork, checkUpdate collector.CheckUpdate, sessionCache collector.SessionCacheV1, updateStore collector.UpdateStoreV1, clock collector.ClockV1) *Listener {
+func newListener(collectSnapshot collector.CollectSnapshot, latestNetwork collector.LatestNetwork, refreshNetwork collector.RefreshNetwork, checkUpdate collector.CheckUpdate, sessionCache collector.SessionCacheV1, updateStore collector.UpdateStoreV1, clock collector.ClockV1, version string) *Listener {
 	instance, _ := ipc.Here()
 	return &Listener{listener{
 		collect: collectSnapshot, latest: latestNetwork, refresh: refreshNetwork, update: checkUpdate,
 		sessions: sessionCache, updates: updateStore, clock: clock,
-		instance: instance, version: ipc.BuildVersion(), executable: executable(), getenv: os.Getenv,
+		instance: instance, version: version, executable: executable(), getenv: os.Getenv,
 		stopped: make(chan struct{}),
 	}}
 }
 
 // run holds the instance lock for its whole life: a second daemon started
 // by a racing client finds it taken and leaves at once, successfully.
-func (a *Listener) run(ctx context.Context, _ []string) error {
+func (a *Listener) run(ctx context.Context, args []string) error {
+	if len(args) > 0 {
+		return a.control(ctx, args)
+	}
 	if a.instance.Dir == "" {
 		return errors.New("statusline daemon: no instance directory")
 	}

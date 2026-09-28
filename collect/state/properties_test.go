@@ -11,6 +11,7 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/kitsunium/statusline/quota"
+	"github.com/kitsunium/statusline/snapshot"
 )
 
 var t0 = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -88,7 +89,7 @@ func propertyNetworkCurrentHealthUnknownPastMaxAge(t *testing.T, seed uint64) {
 	seeded(t, seed)
 	rapid.Check(t, func(t *rapid.T) {
 		at, now := instantGen().Draw(t, "at"), instantGen().Draw(t, "now")
-		n := Network{}.RecordHealth(rapid.IntRange(1, 3).Draw(t, "h"), at)
+		n := Network{}.RecordHealth(snapshot.Health(rapid.IntRange(1, 3).Draw(t, "h")), at)
 		got := n.CurrentHealth(now)
 		if fresh := now.Sub(at) < HealthMaxAge; fresh != (got == n.Health) || (!fresh && got != 0) {
 			t.Fatalf("CurrentHealth at %v after = %d", now.Sub(at), got)
@@ -114,7 +115,7 @@ func propertyNetworkRecordHealthFresh(t *testing.T, seed uint64) {
 	seeded(t, seed)
 	rapid.Check(t, func(t *rapid.T) {
 		at := instantGen().Draw(t, "at")
-		h := rapid.IntRange(0, 3).Draw(t, "h")
+		h := snapshot.Health(rapid.IntRange(0, 3).Draw(t, "h"))
 		n := Network{}.RecordHealth(h, at)
 		if n.Health != h || !n.HealthFetchedAt.Equal(at) || n.HealthDue(at) {
 			t.Fatalf("RecordHealth = %+v", n)
@@ -126,7 +127,7 @@ func propertyNetworkRecordHealthFailureKeepsLevel(t *testing.T, seed uint64) {
 	seeded(t, seed)
 	rapid.Check(t, func(t *rapid.T) {
 		at := instantGen().Draw(t, "at")
-		n := Network{}.RecordHealth(rapid.IntRange(0, 3).Draw(t, "h"), t0)
+		n := Network{}.RecordHealth(snapshot.Health(rapid.IntRange(0, 3).Draw(t, "h")), t0)
 		failed := n.RecordHealthFailure(at)
 		if failed.Health != n.Health || !failed.HealthFetchedAt.Equal(n.HealthFetchedAt) || !failed.HealthAttemptAt.Equal(at) {
 			t.Fatalf("RecordHealthFailure = %+v", failed)

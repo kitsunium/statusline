@@ -5,7 +5,7 @@
 package quota
 
 // level maps the percentage to its severity.
-func (p Progress) level() int {
+func (p Progress) level() Level {
 	switch {
 	case p.Percent < thresholdMedium:
 		return LevelLow

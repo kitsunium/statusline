@@ -46,7 +46,7 @@ func newPage(getenv func(string) string) statusPage {
 	return statusPage{url: url, doer: &http.Client{Timeout: httpTimeout}}
 }
 
-func (c statusPage) get(ctx context.Context) (int, error) {
+func (c statusPage) get(ctx context.Context) (snapshot.Health, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.url, nil)
 	if err != nil {
 		return snapshot.HealthUnknown, fmt.Errorf("status page: %w", err)
@@ -69,7 +69,7 @@ func (c statusPage) get(ctx context.Context) (int, error) {
 // classify counts the individual services this account depends on: a group
 // only restates its members, and the public-sector deployment is not ours.
 // An undecodable summary is refused, never stored as a level.
-func classify(data []byte) (int, error) {
+func classify(data []byte) (snapshot.Health, error) {
 	var parsed summary
 	if err := json.Unmarshal(data, &parsed); err != nil {
 		return snapshot.HealthUnknown, fmt.Errorf("status page: decode: %w", err)

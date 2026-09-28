@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net"
 	"os"
 	"os/exec"
@@ -45,9 +44,9 @@ type link struct {
 
 // newLink locates the instance of this executable; without one the line
 // still renders, from stdin alone.
-func newLink() *Link {
+func newLink(version string) *Link {
 	instance, _ := ipc.Here()
-	return newLinkWith(config{Instance: instance, Version: ipc.BuildVersion(), Executable: executable()})
+	return newLinkWith(config{Instance: instance, Version: version, Executable: executable()})
 }
 
 // newLinkWith builds a link on an explicit configuration.
@@ -90,22 +89,6 @@ func (l *Link) snapshot(ctx context.Context, key ipc.Key) (snapshot.Snapshot, st
 		return snap, show.OriginCache, nil
 	}
 	return snapshot.Snapshot{}, show.OriginNone, nil
-}
-
-func (l *Link) status(ctx context.Context) (ipc.Status, error) {
-	resp, err := l.exchange(ctx, ipc.Request{Op: ipc.OpStatus}, false)
-	if err != nil {
-		return ipc.Status{}, err
-	}
-	if resp.Status == nil {
-		return ipc.Status{}, fmt.Errorf("daemon: %s", resp.Error)
-	}
-	return *resp.Status, nil
-}
-
-func (l *Link) stop(ctx context.Context) error {
-	_, err := l.exchange(ctx, ipc.Request{Op: ipc.OpStop}, false)
-	return err
 }
 
 // exchange dials, shakes hands and sends one request. With replaceOlder set,

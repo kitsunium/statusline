@@ -10,7 +10,7 @@ import (
 
 // newLimit clamps the percentage so an upstream overshoot renders as full
 // and a negative value cannot invert a bar.
-func newLimit(kind string, label string, percent int, resetsAt time.Time, window time.Duration, source string) Limit {
+func newLimit(kind Kind, label string, percent int, resetsAt time.Time, window time.Duration, source Source) Limit {
 	return Limit{
 		Kind:     kind,
 		Label:    label,

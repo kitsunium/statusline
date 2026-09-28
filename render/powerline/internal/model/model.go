@@ -14,12 +14,12 @@ import (
 // Quotas.
 type (
 	Limit         = quota.Limit
-	LimitKind     = string
-	LimitSource   = string
+	LimitKind     = quota.Kind
+	LimitSource   = quota.Source
 	LimitSet      = quota.Set
 	ExtraUsage    = quota.Extra
 	Progress      = quota.Progress
-	ProgressLevel = int
+	ProgressLevel = quota.Level
 )
 
 // Quota constants.
@@ -54,15 +54,15 @@ func NewProgress(totalTokens, contextSize int) Progress {
 type (
 	GitStatus     = snapshot.GitStatus
 	CodeChanges   = snapshot.Changes
-	MCPSource     = string
+	MCPSource     = snapshot.MCPSource
 	MCPServer     = snapshot.MCPServer
-	MCPServers    = []snapshot.MCPServer
+	MCPServers    = snapshot.MCPServers
 	TaskItem      = snapshot.TaskItem
 	TaskList      = snapshot.TaskList
 	Epic          = snapshot.Epic
 	TaskBoard     = snapshot.TaskBoard
-	ServiceHealth = int
-	OSType        = int
+	ServiceHealth = snapshot.Health
+	OSType        = snapshot.OS
 	SystemInfo    = snapshot.System
 	UpdateInfo    = snapshot.UpdateNotice
 )
@@ -164,4 +164,4 @@ type StatusLineData struct {
 }
 
 // WithBusy lights the servers being called.
-func WithBusy(servers MCPServers, keys []string) MCPServers { return snapshot.WithBusy(servers, keys) }
+func WithBusy(servers MCPServers, keys []string) MCPServers { return servers.WithBusy(keys) }

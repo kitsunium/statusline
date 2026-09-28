@@ -32,7 +32,7 @@ func splitModelName(name string) (string, string) {
 }
 
 // limit builds the bucket's Limit, false when it carries no percentage.
-func (r *PayloadRateLimit) limit(kind string, label string, window time.Duration) (quota.Limit, bool) {
+func (r *PayloadRateLimit) limit(kind quota.Kind, label string, window time.Duration) (quota.Limit, bool) {
 	percent, ok := r.percent()
 	if !ok {
 		return quota.Limit{}, false

@@ -13,7 +13,7 @@ import (
 
 // currentHealth: past HealthMaxAge a green light would be a claim nobody
 // has checked.
-func (n Network) currentHealth(now time.Time) int {
+func (n Network) currentHealth(now time.Time) snapshot.Health {
 	if n.HealthFetchedAt.IsZero() || now.Sub(n.HealthFetchedAt) >= HealthMaxAge {
 		return snapshot.HealthUnknown
 	}
@@ -24,7 +24,7 @@ func (n Network) healthDue(now time.Time) bool {
 	return n.HealthAttemptAt.IsZero() || now.Sub(n.HealthAttemptAt) >= HealthTTL
 }
 
-func (n Network) recordHealth(h int, now time.Time) Network {
+func (n Network) recordHealth(h snapshot.Health, now time.Time) Network {
 	n.Health, n.HealthFetchedAt, n.HealthAttemptAt = h, now, now
 	return n
 }

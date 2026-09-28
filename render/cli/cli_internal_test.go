@@ -48,11 +48,10 @@ func (d *daemon) Stop(context.Context) error {
 
 // run runs the CLI over fake streams and returns what it printed.
 func run(d *daemon, args []string, stdin, version string) (string, error) {
-	entry := newCLI(show.NewShowStatusLine(d, clock{}), show.NewDaemonStatus(d), show.NewStopDaemon(d))
+	entry := newCLI(show.NewShowStatusLine(d, clock{}), version)
 	var out bytes.Buffer
 	entry.stdin, entry.stdout = strings.NewReader(stdin), &out
 	entry.environ = func() []string { return []string{"COLUMNS=100", "BROKEN"} }
-	entry.version = func() string { return version }
 	err := entry.Run(context.Background(), args)
 	return out.String(), err
 }
@@ -66,28 +65,8 @@ func TestVersion(t *testing.T) {
 	}
 }
 
-func TestDaemonStatus(t *testing.T) {
-	out, err := run(&daemon{running: true}, []string{"daemon", "status"}, "", "v1")
-	if err != nil || !strings.Contains(out, "daemon v1.2.3 pid 7") || !strings.Contains(out, "2 session(s)") || !strings.Contains(out, "v1.2.4") {
-		t.Errorf("status = %q, %v", out, err)
-	}
-	if out, err := run(&daemon{}, []string{"daemon", "status"}, "", "v1"); err == nil || !strings.Contains(out, "no daemon") {
-		t.Errorf("status without daemon = %q, %v; want an error for scripts", out, err)
-	}
-}
-
-func TestDaemonStop(t *testing.T) {
-	d := &daemon{running: true}
-	if out, _ := run(d, []string{"daemon", "stop"}, "", "v1"); !d.stopped || !strings.Contains(out, "stopped") {
-		t.Errorf("stop = %q, stopped %v", out, d.stopped)
-	}
-	if out, err := run(&daemon{}, []string{"daemon", "stop"}, "", "v1"); err != nil || !strings.Contains(out, "no daemon") {
-		t.Errorf("stop without daemon = %q, %v", out, err)
-	}
-}
-
 func TestRenderNeverFails(t *testing.T) {
-	for _, args := range [][]string{nil, {"--refresh-usage"}, {"daemon", "what"}} {
+	for _, args := range [][]string{nil, {"--refresh-usage"}, {"daemon", "status"}} {
 		out, err := run(&daemon{}, args, "{not json", "v1")
 		if err != nil || strings.Count(out, "\n") != 2 {
 			t.Errorf("args %v: %q, %v", args, out, err)

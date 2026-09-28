@@ -76,12 +76,12 @@ func (s *sources) DiffStats(context.Context, string) (snapshot.Changes, error) {
 	return snapshot.Changes{Added: 1}, nil
 }
 
-func (s *sources) Servers(_ context.Context, _ string, pid int) ([]snapshot.MCPServer, error) {
+func (s *sources) Servers(_ context.Context, _ string, pid int) (snapshot.MCPServers, error) {
 	s.hit("mcp")
 	if pid != 42 {
 		return nil, nil
 	}
-	return []snapshot.MCPServer{{Name: "github", Enabled: true}}, nil
+	return snapshot.MCPServers{{Name: "github", Enabled: true}}, nil
 }
 
 func (s *sources) Busy(context.Context, string, string, time.Time) ([]string, error) {
@@ -169,7 +169,7 @@ type endpoints struct {
 	token    string
 	usage    quota.Set
 	usageErr error
-	health   int
+	health   snapshot.Health
 	pageErr  error
 }
 
@@ -189,7 +189,7 @@ func (e *endpoints) Fetch(_ context.Context, token string) (quota.Set, error) {
 // page is the status page side of endpoints.
 type page struct{ e *endpoints }
 
-func (p page) Fetch(context.Context) (int, error) {
+func (p page) Fetch(context.Context) (snapshot.Health, error) {
 	p.e.hit("health")
 	return p.e.health, p.e.pageErr
 }

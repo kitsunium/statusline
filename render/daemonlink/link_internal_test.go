@@ -118,16 +118,13 @@ func TestWarmDaemon(t *testing.T) {
 	if origin != show.OriginDaemon || snap.WorkDir != "from-daemon" {
 		t.Errorf("Snapshot() = %+v, %v", snap, origin)
 	}
-	if st, err := link.Status(context.Background()); err != nil || st.Version != "v1.0.0" {
-		t.Errorf("Status() = %+v, %v", st, err)
-	}
 	if _, err := os.Stat(marker); err == nil {
 		t.Error("a daemon was started while one answered")
 	}
 }
 
-// TestSequenceRenderCold pins design/sequences/render-cold.yaml: no daemon,
-// the cache is read and a daemon is started.
+// TestSequenceRenderCold: no daemon, the cache is read and a daemon is
+// started (ADR 0001).
 func TestSequenceRenderCold(t *testing.T) {
 	inst, exe, marker := setup(t)
 	key := ipc.Key{SessionID: "s", SessionDir: "/w"}
@@ -198,21 +195,6 @@ func TestNewerCompatibleDaemonIsUsed(t *testing.T) {
 	link := newLinkWith(config{Instance: inst, Version: "v1.0.0", Executable: exe})
 	if _, origin, _ := link.Snapshot(context.Background(), ipc.Key{}); origin != show.OriginDaemon {
 		t.Errorf("origin = %v, want the newer compatible daemon", origin)
-	}
-}
-
-func TestControlWithoutDaemon(t *testing.T) {
-	inst, exe, marker := setup(t)
-	link := newLinkWith(config{Instance: inst, Version: "v1.0.0", Executable: exe})
-	if _, err := link.Status(context.Background()); err == nil {
-		t.Error("Status() without a daemon did not fail")
-	}
-	if err := link.Stop(context.Background()); err == nil {
-		t.Error("Stop() without a daemon did not fail")
-	}
-	time.Sleep(200 * time.Millisecond)
-	if _, err := os.Stat(marker); err == nil {
-		t.Error("status or stop started a daemon")
 	}
 }
 

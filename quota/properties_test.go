@@ -15,7 +15,7 @@ import (
 var epoch = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // limitGen draws any limit, valid or not, around epoch.
-func limitGen(kind string) *rapid.Generator[Limit] {
+func limitGen(kind Kind) *rapid.Generator[Limit] {
 	return rapid.Custom(func(t *rapid.T) Limit {
 		percent := rapid.IntRange(-500, 500).Draw(t, "percent")
 		window := time.Duration(rapid.Int64Range(0, int64(8*24*time.Hour)).Draw(t, "window"))
@@ -23,7 +23,7 @@ func limitGen(kind string) *rapid.Generator[Limit] {
 		if rapid.Bool().Draw(t, "hasReset") {
 			reset = epoch.Add(time.Duration(rapid.Int64Range(-int64(10*24*time.Hour), int64(10*24*time.Hour)).Draw(t, "reset")))
 		}
-		source := rapid.SampledFrom([]string{SourceStdin, SourceAPI, SourceNone}).Draw(t, "source")
+		source := rapid.SampledFrom([]Source{SourceStdin, SourceAPI, SourceNone}).Draw(t, "source")
 		return NewLimit(kind, "l", percent, reset, window, source)
 	})
 }

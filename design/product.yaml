@@ -63,6 +63,9 @@ evidence:
 binaries:
   - name: statusline
     description: The status line, and the daemon that collects for it.
+    build:
+      - {name: version, default: dev}
+      - {name: vendorKey}
     roles:
       - name: client
         description: What the host runs on every redraw.

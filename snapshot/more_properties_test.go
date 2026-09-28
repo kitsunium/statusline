@@ -157,12 +157,12 @@ func propertyTaskListIsActiveMatchesCounts(t *testing.T, seed uint64) {
 	})
 }
 
-func propertyWithSourceTagsEvery(t *testing.T, seed uint64) {
+func propertyMCPServersWithSourceTagsEvery(t *testing.T, seed uint64) {
 	seeded(t, seed)
 	rapid.Check(t, func(t *rapid.T) {
 		servers := serversGen().Draw(t, "servers")
-		src := rapid.SampledFrom([]string{MCPSourceCLI, MCPSourceUser, MCPSourcePlugin}).Draw(t, "src")
-		got := WithSource(servers, src)
+		src := rapid.SampledFrom([]MCPSource{MCPSourceCLI, MCPSourceUser, MCPSourcePlugin}).Draw(t, "src")
+		got := servers.WithSource(src)
 		if len(got) != len(servers) {
 			t.Fatal("WithSource changed the length")
 		}

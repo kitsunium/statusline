@@ -12,41 +12,44 @@ domains:
         description: The context window and the account's rate limits. Pure; time is an argument.
         evidence: [quota-sources]
         constants:
-          - {name: KindContext, type: string, value: '"context"', description: "KindContext is the context window of the conversation."}
-          - {name: KindSession, type: string, value: '"session"', description: "KindSession is the rolling 5-hour quota."}
-          - {name: KindWeekly, type: string, value: '"weekly"', description: "KindWeekly is the rolling 7-day quota, all models."}
-          - {name: KindScoped, type: string, value: '"weekly_scoped"', description: "KindScoped is a 7-day quota restricted to one model family."}
-          - {name: KindExtra, type: string, value: '"extra"', description: "KindExtra is the monthly extra-usage credit balance."}
-          - {name: SourceStdin, type: string, value: '"stdin"', description: "SourceStdin is the payload the host pipes on every redraw."}
-          - {name: SourceAPI, type: string, value: '"api"', description: "SourceAPI is the OAuth usage endpoint."}
-          - {name: SourceNone, type: string, value: '""', description: "SourceNone marks an absent limit."}
-          - {name: LevelLow, type: int, value: "0"}
-          - {name: LevelMedium, type: int, value: "1"}
-          - {name: LevelHigh, type: int, value: "2"}
-          - {name: LevelCritical, type: int, value: "3"}
-          - {name: SessionWindow, type: time.Duration, value: "18000000000000", description: "SessionWindow is the rolling 5-hour rate limit window."}
-          - {name: WeeklyWindow, type: time.Duration, value: "604800000000000", description: "WeeklyWindow is the rolling 7-day rate limit window."}
+          - {name: KindContext, type: Kind, value: '"context"', description: "KindContext is the context window of the conversation."}
+          - {name: KindSession, type: Kind, value: '"session"', description: "KindSession is the rolling 5-hour quota."}
+          - {name: KindWeekly, type: Kind, value: '"weekly"', description: "KindWeekly is the rolling 7-day quota, all models."}
+          - {name: KindScoped, type: Kind, value: '"weekly_scoped"', description: "KindScoped is a 7-day quota restricted to one model family."}
+          - {name: KindExtra, type: Kind, value: '"extra"', description: "KindExtra is the monthly extra-usage credit balance."}
+          - {name: SourceStdin, type: Source, value: '"stdin"', description: "SourceStdin is the payload the host pipes on every redraw."}
+          - {name: SourceAPI, type: Source, value: '"api"', description: "SourceAPI is the OAuth usage endpoint."}
+          - {name: SourceNone, type: Source, value: '""', description: "SourceNone marks an absent limit."}
+          - {name: LevelLow, type: Level, value: "0"}
+          - {name: LevelMedium, type: Level, value: "1"}
+          - {name: LevelHigh, type: Level, value: "2"}
+          - {name: LevelCritical, type: Level, value: "3"}
+          - {name: SessionWindow, type: time.Duration, value: "5 * time.Hour", description: "SessionWindow is the rolling 5-hour rate limit window."}
+          - {name: WeeklyWindow, type: time.Duration, value: "7 * 24 * time.Hour", description: "WeeklyWindow is the rolling 7-day rate limit window."}
         values:
+          - {name: Kind, underlying: string, description: "Kind identifies which quota a Limit measures; plans expose different subsets."}
+          - {name: Source, underlying: string, description: "Source records where a Limit was read from: stdin is authoritative and free, the API costs a request."}
+          - {name: Level, underlying: int, description: "Level is the severity of a consumption."}
           - name: Progress
             description: A consumption percentage.
             fields:
               - {name: Percent, type: int, tag: 'json:"percent"'}
             methods:
-              - {name: Level, results: [{type: int}], properties: [Monotonic]}
+              - {name: Level, results: [{type: Level}], properties: [Monotonic]}
           - name: Timestamp
             description: An instant written as a Unix epoch in seconds or as an RFC 3339 string; anything else is the zero instant, never an error.
             fields:
-              - {name: Time, type: time.Time}
+              - {type: time.Time, embedded: true}
           - name: Limit
             description: One quota and its refill schedule. A zero Limit means the plan does not expose it — never 0 %.
             fields:
-              - {name: Kind, type: string, tag: 'json:"kind,omitempty"'}
+              - {name: Kind, type: Kind, tag: 'json:"kind,omitempty"'}
               - {name: Label, type: string, tag: 'json:"label,omitempty"'}
               - {name: Percent, type: int, tag: 'json:"percent,omitempty"'}
               - {name: ResetsAt, type: time.Time, tag: 'json:"resets_at,omitzero"'}
               - {name: Window, type: time.Duration, tag: 'json:"window,omitempty"'}
               - {name: Active, type: bool, tag: 'json:"active,omitempty"'}
-              - {name: Source, type: string, tag: 'json:"source,omitempty"'}
+              - {name: Source, type: Source, tag: 'json:"source,omitempty"'}
             methods:
               - {name: IsValid, results: [{type: bool}], properties: [NeedsSource]}
               - {name: HasWindow, results: [{type: bool}], properties: [NeedsBoth]}
@@ -67,7 +70,7 @@ domains:
               - {name: LimitMinor, type: int, tag: 'json:"limit_minor,omitempty"'}
               - {name: Currency, type: string, tag: 'json:"currency,omitempty"'}
               - {name: Exponent, type: int, tag: 'json:"exponent,omitempty"'}
-              - {name: Source, type: string, tag: 'json:"source,omitempty"'}
+              - {name: Source, type: Source, tag: 'json:"source,omitempty"'}
             methods:
               - {name: IsValid, results: [{type: bool}], properties: [RequiresEnabled]}
           - name: Set
@@ -86,12 +89,12 @@ domains:
           - name: NewLimit
             description: NewLimit builds a Limit with its percentage clamped to 0–100.
             params:
-              - {name: kind, type: string}
+              - {name: kind, type: Kind}
               - {name: label, type: string}
               - {name: percent, type: int}
               - {name: resetsAt, type: time.Time}
               - {name: window, type: time.Duration}
-              - {name: source, type: string}
+              - {name: source, type: Source}
             results: [{type: Limit}]
             properties: [PercentClamped]
           - {name: NewProgress, params: [{name: totalTokens, type: int}, {name: contextSize, type: int}], results: [{type: Progress}], properties: [Bounded]}
@@ -113,22 +116,31 @@ domains:
           - {name: TaskWaiting, type: string, value: '"waiting"'}
           - {name: TaskCompleted, type: string, value: '"completed"'}
           - {name: NoEpic, type: int, value: "0", description: "NoEpic is the epic of tasks tied to none."}
-          - {name: MCPSourceUnknown, type: string, value: '""'}
-          - {name: MCPSourceManaged, type: string, value: '"managed"'}
-          - {name: MCPSourceCLI, type: string, value: '"cli"'}
-          - {name: MCPSourceLocal, type: string, value: '"local"'}
-          - {name: MCPSourceProject, type: string, value: '"project"'}
-          - {name: MCPSourceUser, type: string, value: '"user"'}
-          - {name: MCPSourcePlugin, type: string, value: '"plugin"'}
-          - {name: HealthUnknown, type: int, value: "0"}
-          - {name: HealthOK, type: int, value: "1"}
-          - {name: HealthDegraded, type: int, value: "2"}
-          - {name: HealthDown, type: int, value: "3"}
-          - {name: OSLinux, type: int, value: "0"}
-          - {name: OSDarwin, type: int, value: "1"}
-          - {name: OSWindows, type: int, value: "2"}
-          - {name: OSUnknown, type: int, value: "3"}
+          - {name: MCPSourceUnknown, type: MCPSource, value: '""'}
+          - {name: MCPSourceManaged, type: MCPSource, value: '"managed"'}
+          - {name: MCPSourceCLI, type: MCPSource, value: '"cli"'}
+          - {name: MCPSourceLocal, type: MCPSource, value: '"local"'}
+          - {name: MCPSourceProject, type: MCPSource, value: '"project"'}
+          - {name: MCPSourceUser, type: MCPSource, value: '"user"'}
+          - {name: MCPSourcePlugin, type: MCPSource, value: '"plugin"'}
+          - {name: HealthUnknown, type: Health, value: "0"}
+          - {name: HealthOK, type: Health, value: "1"}
+          - {name: HealthDegraded, type: Health, value: "2"}
+          - {name: HealthDown, type: Health, value: "3"}
+          - {name: OSLinux, type: OS, value: "0"}
+          - {name: OSDarwin, type: OS, value: "1"}
+          - {name: OSWindows, type: OS, value: "2"}
+          - {name: OSUnknown, type: OS, value: "3"}
         values:
+          - {name: MCPSource, underlying: string, description: "MCPSource names the configuration scope that declared an MCP server."}
+          - {name: Health, underlying: int, description: "Health is the aggregate state of the provider's public services."}
+          - {name: OS, underlying: int, description: "OS is the operating system family."}
+          - name: MCPServers
+            underlying: "[]MCPServer"
+            description: The MCP servers a session can reach, in precedence order.
+            methods:
+              - {name: WithSource, description: "WithSource tags every server with its scope, in place.", params: [{name: src, type: MCPSource}], results: [{type: MCPServers}], properties: [TagsEvery]}
+              - {name: WithBusy, description: "WithBusy returns a copy with the servers being called lit, unknown ones appended.", params: [{name: keys, type: "[]string"}], results: [{type: MCPServers}], properties: [KeepsServers]}
           - name: GitStatus
             fields:
               - {name: Branch, type: string, tag: 'json:"branch,omitempty"'}
@@ -150,7 +162,7 @@ domains:
               - {name: Name, type: string, tag: 'json:"name"'}
               - {name: Enabled, type: bool, tag: 'json:"enabled,omitempty"'}
               - {name: Plugin, type: string, tag: 'json:"plugin,omitempty"'}
-              - {name: Source, type: string, tag: 'json:"source,omitempty"'}
+              - {name: Source, type: MCPSource, tag: 'json:"source,omitempty"'}
               - {name: Busy, type: bool, tag: 'json:"busy,omitempty"'}
           - name: TaskItem
             fields:
@@ -183,7 +195,7 @@ domains:
               - {name: IsEmpty, results: [{type: bool}], properties: [MatchesContent]}
           - name: System
             fields:
-              - {name: OS, type: int, tag: 'json:"os"'}
+              - {name: OS, type: OS, tag: 'json:"os"'}
               - {name: IsDocker, type: bool, tag: 'json:"docker,omitempty"'}
           - name: UpdateNotice
             fields:
@@ -195,19 +207,17 @@ domains:
               - {name: WorkDir, type: string, tag: 'json:"work_dir,omitempty"'}
               - {name: Git, type: GitStatus, tag: 'json:"git"'}
               - {name: Changes, type: Changes, tag: 'json:"changes"'}
-              - {name: MCP, type: "[]MCPServer", tag: 'json:"mcp,omitempty"'}
+              - {name: MCP, type: MCPServers, tag: 'json:"mcp,omitempty"'}
               - {name: Tasks, type: TaskBoard, tag: 'json:"tasks"'}
               - {name: Working, type: bool, tag: 'json:"working,omitempty"'}
               - {name: System, type: System, tag: 'json:"system"'}
-              - {name: Health, type: int, tag: 'json:"health,omitempty"'}
+              - {name: Health, type: Health, tag: 'json:"health,omitempty"'}
               - {name: API, type: quota.Set, tag: 'json:"api"'}
               - {name: Update, type: UpdateNotice, tag: 'json:"update"'}
               - {name: CollectedAt, type: time.Time, tag: 'json:"collected_at"'}
         functions:
           - {name: ToolKey, params: [{name: name, type: string}], results: [{type: string}], properties: [Charset]}
-          - {name: ClassifyHealth, params: [{name: states, type: "[]string"}], results: [{type: int}], properties: [Monotonic]}
-          - {name: WithSource, description: "WithSource tags every server with its scope, in place.", params: [{name: servers, type: "[]MCPServer"}, {name: source, type: string}], results: [{type: "[]MCPServer"}], properties: [TagsEvery]}
-          - {name: WithBusy, description: "WithBusy returns a copy with the servers being called lit, unknown ones appended.", params: [{name: servers, type: "[]MCPServer"}, {name: keys, type: "[]string"}], results: [{type: "[]MCPServer"}], properties: [KeepsServers]}
+          - {name: ClassifyHealth, params: [{name: states, type: "[]string"}], results: [{type: Health}], properties: [Monotonic]}
 
       - name: ipc
         role: library
@@ -292,4 +302,3 @@ domains:
           - {name: ReadFrame, params: [{name: r, type: io.Reader}, {name: v, type: any}], results: [{type: error}], properties: [Roundtrip]}
           - {name: CompareVersions, params: [{name: a, type: string}, {name: b, type: string}], results: [{type: int}], properties: [Order]}
           - {name: Compatible, params: [{name: protocol, type: string}], results: [{type: bool}], properties: [MajorOne]}
-          - {name: BuildVersion, description: "BuildVersion is the release this binary was built as; empty for a development build.", results: [{type: string}], properties: [Stable]}

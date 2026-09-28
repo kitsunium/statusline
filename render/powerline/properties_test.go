@@ -26,7 +26,7 @@ var (
 // frameGen draws a plausible frame: every segment may be present or not.
 func frameGen() *rapid.Generator[Frame] {
 	return rapid.Custom(func(t *rapid.T) Frame {
-		limit := func(kind string, label string, window time.Duration) quota.Limit {
+		limit := func(kind quota.Kind, label string, window time.Duration) quota.Limit {
 			if !rapid.Bool().Draw(t, "has "+label) {
 				return quota.Limit{}
 			}
@@ -46,7 +46,7 @@ func frameGen() *rapid.Generator[Frame] {
 			Dir:     "/" + strings.Repeat("deep/", rapid.IntRange(0, 8).Draw(t, "depth")) + "project",
 			Changes: snapshot.Changes{Added: rapid.IntRange(0, 5000).Draw(t, "added"), Removed: rapid.IntRange(0, 5000).Draw(t, "removed")},
 			System:  snapshot.System{OS: snapshot.OSLinux},
-			Health:  rapid.IntRange(0, 3).Draw(t, "health"),
+			Health:  snapshot.Health(rapid.IntRange(0, 3).Draw(t, "health")),
 			Working: rapid.Bool().Draw(t, "working"),
 			Now:     now,
 		}

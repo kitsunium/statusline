@@ -15,7 +15,7 @@ func seeded(t *testing.T, seed uint64) {
 func propertyExtraIsValidRequiresEnabled(t *testing.T, seed uint64) {
 	seeded(t, seed)
 	rapid.Check(t, func(t *rapid.T) {
-		e := Extra{Enabled: rapid.Bool().Draw(t, "on"), Source: rapid.SampledFrom([]string{SourceAPI, SourceNone}).Draw(t, "src")}
+		e := Extra{Enabled: rapid.Bool().Draw(t, "on"), Source: rapid.SampledFrom([]Source{SourceAPI, SourceNone}).Draw(t, "src")}
 		if e.IsValid() != (e.Enabled && e.Source != SourceNone) {
 			t.Fatalf("IsValid(%+v) = %v", e, e.IsValid())
 		}
@@ -55,7 +55,7 @@ func propertyLimitIsOnTrackMatchesPace(t *testing.T, seed uint64) {
 func propertyLimitIsValidNeedsSource(t *testing.T, seed uint64) {
 	seeded(t, seed)
 	rapid.Check(t, func(t *rapid.T) {
-		kind := rapid.SampledFrom([]string{KindContext, KindSession, KindWeekly}).Draw(t, "kind")
+		kind := rapid.SampledFrom([]Kind{KindContext, KindSession, KindWeekly}).Draw(t, "kind")
 		l := limitGen(kind).Draw(t, "l")
 		if l.Source == SourceNone && l.IsValid() {
 			t.Fatal("a limit without a source is valid")

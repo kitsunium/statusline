@@ -13,7 +13,7 @@ func TestInfoNamesTheOS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := map[string]int{"linux": snapshot.OSLinux, "darwin": snapshot.OSDarwin, "windows": snapshot.OSWindows}
+	want := map[string]snapshot.OS{"linux": snapshot.OSLinux, "darwin": snapshot.OSDarwin, "windows": snapshot.OSWindows}
 	if w, ok := want[runtime.GOOS]; ok && info.OS != w {
 		t.Errorf("OS = %d on %s, want %d", info.OS, runtime.GOOS, w)
 	}

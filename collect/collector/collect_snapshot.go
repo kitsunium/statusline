@@ -67,7 +67,7 @@ func (h *CollectSnapshotHandler) collect(ctx context.Context, in CollectSnapshot
 	gather(func() {
 		busy, _ := h.mcpCalls.Busy(ctx, key.TranscriptPath, key.SessionID, now)
 		servers, _ := h.mcpConfig.Servers(ctx, key.SessionDir, host.PID)
-		snap.MCP = snapshot.WithBusy(servers, busy)
+		snap.MCP = servers.WithBusy(busy)
 	})
 	gather(func() { snap.Tasks, _ = h.taskStore.Board(ctx, key.SessionID, key.TaskListID, now) })
 	wg.Wait()

@@ -1,9 +1,12 @@
 package daemon
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"net"
 	"os"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -76,7 +79,7 @@ func instance(t *testing.T) ipc.Instance {
 // listenerAt builds a daemon on fakes at an explicit instance.
 func listenerAt(inst ipc.Instance, clk *clock, up collector.CheckUpdateOutput) *Listener {
 	cache := sessioncache.NewCache()
-	l := newListener(collect{cache}, latest{}, refresh{}, update{up}, cache, updates{}, clk)
+	l := newListener(collect{cache}, latest{}, refresh{}, update{up}, cache, updates{}, clk, "v1.0.0")
 	l.instance, l.version, l.executable = inst, "v1.0.0", "/e"
 	l.getenv = func(string) string { return "" }
 	return l
@@ -215,5 +218,37 @@ func TestStopsOnCancel(t *testing.T) {
 	case <-done:
 	case <-time.After(5 * time.Second):
 		t.Fatal("a signal did not stop the daemon")
+	}
+}
+
+func TestDaemonStatusAndStopCommands(t *testing.T) {
+	inst := instance(t)
+	ctl := listenerAt(inst, &clock{t0: time.Now()}, collector.CheckUpdateOutput{})
+	var out bytes.Buffer
+	ctl.stdout = &out
+	if err := ctl.Run(context.Background(), []string{"status"}); !errors.Is(err, errNoDaemon) {
+		t.Errorf("status without a daemon = %q, %v; want an error for scripts", out.String(), err)
+	}
+	out.Reset()
+	if err := ctl.Run(context.Background(), []string{"stop"}); err != nil || !strings.Contains(out.String(), "no daemon") {
+		t.Errorf("stop without a daemon = %q, %v", out.String(), err)
+	}
+	if err := ctl.Run(context.Background(), []string{"dance"}); err == nil {
+		t.Error("an unknown command was accepted")
+	}
+
+	done := start(t, listenerAt(inst, &clock{t0: time.Now()}, collector.CheckUpdateOutput{}), true)
+	out.Reset()
+	if err := ctl.Run(context.Background(), []string{"status"}); err != nil || !strings.Contains(out.String(), "daemon v1.0.0 pid") || !strings.Contains(out.String(), "v0.0.9") {
+		t.Errorf("status = %q, %v", out.String(), err)
+	}
+	out.Reset()
+	if err := ctl.Run(context.Background(), []string{"stop"}); err != nil || !strings.Contains(out.String(), "daemon stopped") {
+		t.Errorf("stop = %q, %v", out.String(), err)
+	}
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("daemon stop did not stop the daemon")
 	}
 }

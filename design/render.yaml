@@ -111,8 +111,8 @@ domains:
               - {name: Git, type: snapshot.GitStatus}
               - {name: Changes, type: snapshot.Changes}
               - {name: System, type: snapshot.System}
-              - {name: MCP, type: "[]snapshot.MCPServer"}
-              - {name: Health, type: int}
+              - {name: MCP, type: snapshot.MCPServers}
+              - {name: Health, type: snapshot.Health}
               - {name: Tasks, type: snapshot.TaskBoard}
               - {name: Working, type: bool}
               - {name: Update, type: snapshot.UpdateNotice}
@@ -128,7 +128,7 @@ domains:
         role: application
         code: 64.2.3
         uses: [quota, snapshot, ipc, session, powerline]
-        description: One redraw, and the user's commands about the daemon.
+        description: One redraw.
         constants:
           - {name: OriginDaemon, type: string, value: '"daemon"'}
           - {name: OriginCache, type: string, value: '"cache"'}
@@ -140,12 +140,6 @@ domains:
             description: SnapshotSourceV1 gives a session's snapshot and where it came from (Origin*).
             methods:
               - {name: Snapshot, params: [{name: key, type: ipc.Key}], results: [{type: snapshot.Snapshot}, {type: string}]}
-          - name: DaemonControl
-            direction: out
-            version: 1
-            methods:
-              - {name: Status, results: [{type: ipc.Status}]}
-              - {name: Stop}
           - name: Clock
             direction: out
             version: 1
@@ -171,21 +165,6 @@ domains:
             scenarios:
               - {name: draws the daemons snapshot with stdin winning, kind: success}
               - {name: draws from stdin alone when nothing is known, kind: success}
-          - name: DaemonStatus
-            output:
-              - {name: Running, type: bool}
-              - {name: Status, type: ipc.Status}
-            calls: [render/port/DaemonControl@v1.Status]
-            scenarios:
-              - {name: reports a running daemon, kind: success}
-              - {name: reports no daemon, kind: success}
-          - name: StopDaemon
-            output:
-              - {name: WasRunning, type: bool}
-            calls: [render/port/DaemonControl@v1.Stop]
-            scenarios:
-              - {name: stops a running daemon, kind: success}
-              - {name: stops nothing without a daemon, kind: success}
 
       - name: cli
         role: presentation
@@ -195,8 +174,8 @@ domains:
         adapters:
           - name: CLI
             implements: [render/port/Command@v1]
-            uses: [render/usecase/ShowStatusLine, render/usecase/DaemonStatus, render/usecase/StopDaemon]
-            calls: [render/usecase/ShowStatusLine, render/usecase/DaemonStatus, render/usecase/StopDaemon]
+            uses: [render/usecase/ShowStatusLine, "build:version"]
+            calls: [render/usecase/ShowStatusLine]
 
       - name: daemonlink
         role: adapter
@@ -206,7 +185,8 @@ domains:
         evidence: [one-binary-two-processes]
         adapters:
           - name: Link
-            implements: [render/port/SnapshotSource@v1, render/port/DaemonControl@v1]
+            implements: [render/port/SnapshotSource@v1]
+            uses: ["build:version"]
 
       - name: systemclock
         role: adapter

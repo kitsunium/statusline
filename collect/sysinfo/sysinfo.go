@@ -17,7 +17,7 @@ const (
 	dockerIdentifier string = "docker"
 )
 
-func detectOS() int {
+func detectOS() snapshot.OS {
 	switch runtime.GOOS {
 	case "linux":
 		return snapshot.OSLinux

@@ -104,30 +104,30 @@ func newBase() *config {
 // in the global config's entry for this project mark servers disabled.
 //
 // Returns:
-//   - []snapshot.MCPServer: list of MCP server configurations
-func (p *reader) servers() []snapshot.MCPServer {
+//   - snapshot.MCPServers: list of MCP server configurations
+func (p *reader) servers() snapshot.MCPServers {
 	global := p.readGlobalConfig()
 	local := global.Projects[p.projectDir]
 	cli := p.readCommandLine()
 
-	sources := [][]snapshot.MCPServer{
-		snapshot.WithSource(p.readManagedConfig(), snapshot.MCPSourceManaged),
-		snapshot.WithSource(cli.servers, snapshot.MCPSourceCLI),
+	sources := []snapshot.MCPServers{
+		p.readManagedConfig().WithSource(snapshot.MCPSourceManaged),
+		cli.servers.WithSource(snapshot.MCPSourceCLI),
 	}
 	// Strict mode ignores every configured scope but the managed one
 	if !cli.strict {
 		project := p.readProjectConfig()
 		markDisabled(project, local.DisabledMcpjsonServers)
 		sources = append(sources,
-			snapshot.WithSource(convertServers(local.MCPServers, ""), snapshot.MCPSourceLocal),
-			snapshot.WithSource(project, snapshot.MCPSourceProject),
-			snapshot.WithSource(convertServers(global.MCPServers, ""), snapshot.MCPSourceUser),
-			snapshot.WithSource(p.readPluginServers(), snapshot.MCPSourcePlugin),
+			convertServers(local.MCPServers, "").WithSource(snapshot.MCPSourceLocal),
+			project.WithSource(snapshot.MCPSourceProject),
+			convertServers(global.MCPServers, "").WithSource(snapshot.MCPSourceUser),
+			p.readPluginServers().WithSource(snapshot.MCPSourcePlugin),
 		)
 	}
 
 	seen := make(map[string]bool, defaultMapCapacity)
-	servers := make([]snapshot.MCPServer, 0, defaultSliceCapacity)
+	servers := make(snapshot.MCPServers, 0, defaultSliceCapacity)
 	// Walk the sources in precedence order: the first to name a server wins
 	for _, source := range sources {
 		// Keep only the names no stronger source already declared
@@ -204,8 +204,8 @@ func (p *reader) readGlobalConfig() userConfigFile {
 // Tries .mcp.json first, then falls back to mcp.json (undotted).
 //
 // Returns:
-//   - []snapshot.MCPServer: list of MCP servers from project config
-func (p *reader) readProjectConfig() []snapshot.MCPServer {
+//   - snapshot.MCPServers: list of MCP servers from project config
+func (p *reader) readProjectConfig() snapshot.MCPServers {
 	// Take the first project file that parses
 	for _, path := range p.projectConfigPaths() {
 		var config mcpConfigFile
@@ -215,18 +215,18 @@ func (p *reader) readProjectConfig() []snapshot.MCPServer {
 		}
 		return convertServers(config.MCPServers, "")
 	}
-	return []snapshot.MCPServer{}
+	return snapshot.MCPServers{}
 }
 
 // readManagedConfig reads MCP servers from enterprise managed config.
 //
 // Returns:
-//   - []snapshot.MCPServer: list of MCP servers from managed-mcp.json
-func (p *reader) readManagedConfig() []snapshot.MCPServer {
+//   - snapshot.MCPServers: list of MCP servers from managed-mcp.json
+func (p *reader) readManagedConfig() snapshot.MCPServers {
 	var config mcpConfigFile
 	// No managed path, or no readable managed file, declares nothing
 	if p.managedPath == "" || !readJSON(p.managedPath, &config) {
-		return []snapshot.MCPServer{}
+		return snapshot.MCPServers{}
 	}
 	return convertServers(config.MCPServers, "")
 }
@@ -239,7 +239,7 @@ func (p *reader) readManagedConfig() []snapshot.MCPServer {
 // Params:
 //   - servers: servers to update in place
 //   - names: names listed as disabled
-func markDisabled(servers []snapshot.MCPServer, names []string) {
+func markDisabled(servers snapshot.MCPServers, names []string) {
 	// Nothing listed, nothing to do
 	if len(names) == 0 {
 		return
@@ -266,11 +266,11 @@ func markDisabled(servers []snapshot.MCPServer, names []string) {
 //   - plugin: plugin providing the servers, empty for a config file
 //
 // Returns:
-//   - []snapshot.MCPServer: slice of MCP servers, sorted by name
-func convertServers(servers map[string]mcpServerConfig, plugin string) []snapshot.MCPServer {
+//   - snapshot.MCPServers: slice of MCP servers, sorted by name
+func convertServers(servers map[string]mcpServerConfig, plugin string) snapshot.MCPServers {
 	// Check if servers map is empty
 	if len(servers) == 0 {
-		return []snapshot.MCPServer{}
+		return snapshot.MCPServers{}
 	}
 
 	names := make([]string, 0, len(servers))
@@ -280,7 +280,7 @@ func convertServers(servers map[string]mcpServerConfig, plugin string) []snapsho
 	}
 	sort.Strings(names)
 
-	result := make([]snapshot.MCPServer, 0, len(servers))
+	result := make(snapshot.MCPServers, 0, len(servers))
 	// Convert map to slice in sorted order
 	for _, name := range names {
 		result = append(result, snapshot.MCPServer{

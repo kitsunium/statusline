@@ -22,11 +22,16 @@ and `lourd kit check` must stay green; `closed: true` with no exceptions.
   `properties_test.go` or `more_properties_test.go`, with rapid).
 - Every scenario is a `given<UseCase><Scenario>` in
   `<usecase>_scenarios_test.go`; every sequence a `givenSequence<Name>`.
-- design/v1 has no named non-struct types: enumerations are plain
-  `string`/`int` constants, `[]snapshot.MCPServer` has functions
-  (`WithSource`, `WithBusy`), not methods.
+- Named non-struct types are values with `underlying:` (quota `Kind`,
+  `Source`, `Level`; snapshot `MCPSource`, `Health`, `OS`, `MCPServers`).
+- The build identity (`version`, `vendorKey`) is declared under
+  `binaries[].build`: `-ldflags -X main.version=… -X main.vendorKey=…`; the
+  adapters that need it take `build:version` in their `uses`.
+- `statusline daemon status|stop` belong to the daemon role (the command
+  word `daemon` selects it); they ask the instance's daemon through the
+  contract.
 - Adapters take only what the design's `uses` gives their constructor;
-  configuration (instance paths, endpoints, version) is read in the body.
+  configuration (instance paths, endpoints) is read in the body.
 - Anything a component keeps to itself lives in unexported code or its
   `internal/` zone (the renderer: `render/powerline/internal/`).
 
@@ -65,10 +70,9 @@ docs/adr           decisions the design's evidence points to
 - `STATUSLINE_USAGE_URL` / `STATUSLINE_HEALTH_URL` point the daemon at other
   endpoints (the parity harness serves synthetic payloads through them).
 - `STATUSLINE_NO_SELF_UPDATE` (or the legacy `STATUS_LINE_NO_SELF_UPDATE`)
-  switches the self-update off. A release sets
-  `-X github.com/kitsunium/statusline/ipc.version=` and
-  `-X github.com/kitsunium/statusline/collect/releases.vendorKey=`
-  (`make build VERSION=… VENDOR_KEY=…`); without a key nothing is installed.
+  switches the self-update off. A release sets `-X main.version=` and
+  `-X main.vendorKey=` (`make build VERSION=… VENDOR_KEY=…`); without a key
+  nothing is installed; without a version (`dev`) nothing is even checked.
 
 ## Working here
 
@@ -76,8 +80,8 @@ docs/adr           decisions the design's evidence points to
 - `make test` (race), `make design` (kit gen -check, kit check), `kit test`
   (tests per component),
   `make parity` (88 black-box goldens must pass), `make latency`.
-- `kit harness install` writes the kit hooks into `.claude/settings.json`
-  (generated files refused to Write/Edit, a digest check on Stop); it is a
-  local comfort, not committed — the CI is the authority (D7).
+- `kit harness install` writes the kit hooks locally (generated files
+  refused to Write/Edit, a digest check on Stop); they are never committed,
+  nor is any entry for them in .gitignore — the CI is the authority (D7).
 - Test data is synthetic only: the repository is public.
 - Commits: conventional, author Kodflow, no AI attribution (post-commit gate).

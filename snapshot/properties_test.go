@@ -29,10 +29,10 @@ func propertyToolKeyCharset(t *testing.T, seed uint64) {
 	})
 }
 
-func serversGen() *rapid.Generator[[]MCPServer] {
-	return rapid.Custom(func(t *rapid.T) []MCPServer {
+func serversGen() *rapid.Generator[MCPServers] {
+	return rapid.Custom(func(t *rapid.T) MCPServers {
 		n := rapid.IntRange(0, 6).Draw(t, "n")
-		out := make([]MCPServer, 0, n)
+		out := make(MCPServers, 0, n)
 		for i := 0; i < n; i++ {
 			out = append(out, MCPServer{
 				Name:    rapid.StringMatching(`[a-z.]{1,6}`).Draw(t, "name"),
@@ -45,13 +45,13 @@ func serversGen() *rapid.Generator[[]MCPServer] {
 }
 
 // propertyWithBusyKeepsServers (snapshot/property/with-busy-keeps-servers).
-func propertyWithBusyKeepsServers(t *testing.T, seed uint64) {
+func propertyMCPServersWithBusyKeepsServers(t *testing.T, seed uint64) {
 	t.Logf("design seed %d (rapid v1.2 takes its own seed from -rapid.seed)", seed)
 	rapid.Check(t, func(t *rapid.T) {
 		servers := serversGen().Draw(t, "servers")
-		before := append([]MCPServer(nil), servers...)
+		before := append(MCPServers(nil), servers...)
 		keys := rapid.SliceOfN(rapid.StringMatching(`(plugin_[a-z-]{1,6}_)?[a-z_]{1,6}`), 0, 4).Draw(t, "keys")
-		got := WithBusy(servers, keys)
+		got := servers.WithBusy(keys)
 		if len(got) < len(before) || len(got) > len(before)+len(keys) {
 			t.Fatalf("len = %d from %d servers and %d keys", len(got), len(before), len(keys))
 		}
