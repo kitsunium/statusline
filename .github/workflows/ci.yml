@@ -93,12 +93,21 @@ jobs:
         with:
           go-version-file: go.mod
       - name: install kit
+        id: kit
         env:
           KIT_READ_TOKEN: ${{ secrets.KIT_READ_TOKEN }}
         run: |
+          if [ -z "$KIT_READ_TOKEN" ]; then
+            echo "::warning::KIT_READ_TOKEN is not set: kitsunium/platform is private, kit cannot be installed, the design was NOT checked"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           git config --global url."https://x-access-token:${KIT_READ_TOKEN}@github.com/kitsunium/".insteadOf "https://github.com/kitsunium/"
           go install "github.com/kitsunium/platform/cmd/kit@${{ vars.KIT_REF }}"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
       - name: the generated files are the design's
+        if: steps.kit.outputs.ready == 'true'
         run: kit gen -check
       - name: kit check
+        if: steps.kit.outputs.ready == 'true'
         run: kit check
