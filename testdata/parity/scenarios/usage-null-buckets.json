@@ -1,0 +1,30 @@
+{
+  "description": "A plan without a weekly cap: seven_day is null and limits[] has no weekly entry. The weekly quota stays absent, never a 0 % bar.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}"
+    },
+    "context_window": {
+      "used_percentage": 30
+    }
+  },
+  "credentials": true,
+  "usage": {
+    "limits": [
+      {
+        "kind": "five_hour",
+        "group": "session",
+        "percent": 10,
+        "resets_at": "{{rfc3339:+15000}}"
+      }
+    ],
+    "five_hour": null,
+    "seven_day": null
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

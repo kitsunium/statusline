@@ -1,0 +1,46 @@
+{
+  "description": "An unreadable MCP tasks file shows nothing and does not fall back to the native task list.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}/work/atlas"
+    },
+    "context_window": {
+      "used_percentage": 20,
+      "context_window_size": 200000
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 20,
+        "resets_at": "{{epoch:+12000}}"
+      }
+    },
+    "effort": {
+      "level": "high"
+    },
+    "session_id": "parity-session-0003",
+    "transcript_path": "{{home}}/.claude/projects/-work-atlas/parity-session-0003.jsonl"
+  },
+  "repos": [
+    {
+      "dir": "home/work/atlas",
+      "branch": "main",
+      "commit": {
+        "README.md": "atlas\n"
+      }
+    }
+  ],
+  "files": {
+    "home/.claude/kodflow/sessions/parity-session-0003/tasks.json": "{not json",
+    "home/.claude/tasks/session-parity-s/1.json": {
+      "id": "1",
+      "subject": "native",
+      "status": "pending"
+    }
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

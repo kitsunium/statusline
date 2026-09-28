@@ -1,0 +1,67 @@
+{
+  "description": "No MCP tasks file: the native task list (session- + 8 first characters of the id) renders as the Tâches pill.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}/work/atlas"
+    },
+    "context_window": {
+      "used_percentage": 20,
+      "context_window_size": 200000
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 20,
+        "resets_at": "{{epoch:+12000}}"
+      }
+    },
+    "effort": {
+      "level": "high"
+    },
+    "session_id": "parity-session-0003",
+    "transcript_path": "{{home}}/.claude/projects/-work-atlas/parity-session-0003.jsonl"
+  },
+  "repos": [
+    {
+      "dir": "home/work/atlas",
+      "branch": "main",
+      "commit": {
+        "README.md": "atlas\n"
+      }
+    }
+  ],
+  "files": {
+    "home/.claude/tasks/session-parity-s/1.json": {
+      "id": "1",
+      "subject": "native one",
+      "status": "completed"
+    },
+    "home/.claude/tasks/session-parity-s/2.json": {
+      "id": "2",
+      "subject": "native two",
+      "status": "in_progress"
+    },
+    "home/.claude/tasks/session-parity-s/10.json": {
+      "id": "10",
+      "subject": "native ten",
+      "status": "pending"
+    },
+    "home/.claude/tasks/session-parity-s/bad.json": "nope"
+  },
+  "variants": [
+    {
+      "name": "default"
+    },
+    {
+      "name": "list-id",
+      "env": {
+        "CLAUDE_CODE_TASK_LIST_ID": "shared list"
+      }
+    }
+  ],
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

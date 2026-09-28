@@ -1,0 +1,12 @@
+{
+  "binary": "legacy-status-line",
+  "flavour": "legacy",
+  "scenario": "busy/default",
+  "runs": 300,
+  "p50_ms": 11.995,
+  "p95_ms": 21.704,
+  "p99_ms": 33.915,
+  "max_ms": 40.011,
+  "host": "Intel(R) Core(TM) i5-3210M CPU @ 2.50GHz",
+  "measured": "2026-09-28"
+}

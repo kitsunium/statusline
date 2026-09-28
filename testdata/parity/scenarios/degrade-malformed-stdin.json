@@ -1,0 +1,6 @@
+{
+  "description": "A payload that is not JSON must still yield a status line (zero input), never a raw error on every redraw.",
+  "env": {"COLORTERM": "truecolor"},
+  "stdin_raw": "{\"model\": {\"display_name\": \"Opus 5\"", 
+  "variants": [{"name": "default"}]
+}

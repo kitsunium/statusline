@@ -1,0 +1,86 @@
+{
+  "description": "A loaded session, the shape of demo/sample: Opus 5 at effort xhigh, stdin session and weekly quotas, an Opus-scoped weekly quota and a credit balance from the usage API, 42 % of context, a long worktree path, a long branch with changes, MCP servers from user, project, local and plugin scopes with one disabled, healthy services. Variants walk the widths of demo/widths and every display variable.",
+  "env": {"COLORTERM": "truecolor", "COLUMNS": "120"},
+  "stdin": {
+    "model": {"display_name": "Opus 5", "id": "claude-opus-5"},
+    "workspace": {"current_dir": "{{home}}/work/worktrees/atlas-adaptive-line", "project_dir": "{{home}}/work/worktrees/atlas-adaptive-line"},
+    "context_window": {"total_input_tokens": 80000, "total_output_tokens": 4000, "context_window_size": 200000, "used_percentage": 42},
+    "cost": {"total_cost_usd": 1.83, "total_duration_ms": 900000, "total_lines_added": 40, "total_lines_removed": 9},
+    "rate_limits": {
+      "five_hour": {"used_percentage": 34, "resets_at": "{{epoch:+7830}}"},
+      "seven_day": {"used_percentage": 61, "resets_at": "{{epoch:+274830}}"}
+    },
+    "effort": {"level": "xhigh"},
+    "session_id": "parity-session-0001",
+    "transcript_path": "{{home}}/.claude/projects/-work-atlas/parity-session-0001.jsonl",
+    "version": "2.1.150"
+  },
+  "repos": [{
+    "dir": "home/work/worktrees/atlas-adaptive-line",
+    "branch": "feat/adaptive-line-condense-to-terminal-width",
+    "commit": {"a.txt": "a1\na2\na3\n", "b.txt": "b\n", "c.txt": "c\n", "internal/render/fit.go": "package render\n"},
+    "modify": {"a.txt": "", "b.txt": "b\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n", "c.txt": "c\nc2\nc3\n"},
+    "untracked": {"notes.md": "draft\n"}
+  }],
+  "files": {
+    "home/.claude.json": {
+      "mcpServers": {"github": {}, "gitlab": {}, "context7": {}, "playwright": {}, "codacy": {}, "legacy": {"disabled": true}},
+      "projects": {"{{home}}/work/worktrees/atlas-adaptive-line": {"mcpServers": {"notes": {}}, "disabledMcpServers": ["codacy"]}}
+    },
+    "home/work/worktrees/atlas-adaptive-line/.mcp.json": {"mcpServers": {"docs-search": {}}},
+    "home/.claude/settings.json": {"enabledPlugins": {"tasks-plugin@synthetic-market": true, "off-plugin@synthetic-market": false}},
+    "home/.claude/plugins/installed_plugins.json": {"plugins": {
+      "tasks-plugin@synthetic-market": [{"installPath": "{{home}}/.claude/plugins/cache/tasks-plugin"}],
+      "off-plugin@synthetic-market": [{"installPath": "{{home}}/.claude/plugins/cache/off-plugin"}]
+    }},
+    "home/.claude/plugins/cache/tasks-plugin/.mcp.json": {"tasks": {}},
+    "home/.claude/plugins/cache/off-plugin/.mcp.json": {"mcpServers": {"never": {}}},
+    "home/.claude/projects/-work-atlas/parity-session-0001.jsonl": [
+      {"type": "user", "timestamp": "{{rfc3339:-120}}", "message": {"content": "look at the fit"}},
+      {"type": "assistant", "timestamp": "{{rfc3339:-100}}", "message": {"content": [{"type": "tool_use", "id": "toolu_parity_01", "name": "Read", "input": {"file_path": "{{home}}/work/worktrees/atlas-adaptive-line/internal/render/fit.go"}}]}},
+      {"type": "user", "timestamp": "{{rfc3339:-99}}", "message": {"content": [{"type": "tool_result", "tool_use_id": "toolu_parity_01", "content": "ok"}]}}
+    ]
+  },
+  "usage": {
+    "limits": [
+      {"kind": "five_hour", "group": "session", "percent": 30, "resets_at": "{{rfc3339:+7830}}"},
+      {"kind": "seven_day", "group": "weekly", "percent": 60, "resets_at": "{{rfc3339:+274830}}"},
+      {"kind": "weekly_scoped", "group": "weekly", "percent": 48, "resets_at": "{{rfc3339:+274830}}", "scope": {"model": {"id": "claude-opus", "display_name": "Opus"}}}
+    ],
+    "extra_usage": {"is_enabled": true, "monthly_limit": 5000, "used_credits": 1250, "utilization": 25, "currency": "USD", "decimal_places": 2}
+  },
+  "health": {"components": [
+    {"name": "claude.ai", "status": "operational"},
+    {"name": "Claude API", "status": "operational"},
+    {"name": "Claude Code", "status": "operational"},
+    {"name": "Claude for Government", "status": "major_outage"}
+  ]},
+  "variants": [
+    {"name": "default"},
+    {"name": "cols-200", "env": {"COLUMNS": "200"}},
+    {"name": "cols-160", "env": {"COLUMNS": "160"}},
+    {"name": "cols-100", "env": {"COLUMNS": "100"}},
+    {"name": "cols-80", "env": {"COLUMNS": "80"}},
+    {"name": "cols-72", "env": {"COLUMNS": "72"}},
+    {"name": "cols-60", "env": {"COLUMNS": "60"}},
+    {"name": "cols-40", "env": {"COLUMNS": "40"}},
+    {"name": "cols-absent", "env": {"COLUMNS": ""}},
+    {"name": "cols-garbage", "env": {"COLUMNS": "wide"}},
+    {"name": "cols-huge", "env": {"COLUMNS": "20000"}},
+    {"name": "glyphs-text", "env": {"STATUSLINE_GLYPHS": "text"}},
+    {"name": "glyphs-text-80", "env": {"STATUSLINE_GLYPHS": "text", "COLUMNS": "80"}},
+    {"name": "colors-256", "env": {"STATUSLINE_COLORS": "256"}},
+    {"name": "colorterm-absent", "env": {"COLORTERM": ""}},
+    {"name": "colorterm-24bit", "env": {"COLORTERM": "24bit"}},
+    {"name": "mcp-line-2", "env": {"STATUSLINE_MCP_LINE": "2"}},
+    {"name": "mcp-line-2-80", "env": {"STATUSLINE_MCP_LINE": "2", "COLUMNS": "80"}},
+    {"name": "hide-context-weekly", "env": {"STATUSLINE_HIDE": "context,weekly"}},
+    {"name": "hide-all", "env": {"STATUSLINE_HIDE": "context,session,weekly,model,credits,health"}},
+    {"name": "hide-unknown", "env": {"STATUSLINE_HIDE": "nothing, ,Context"}},
+    {"name": "weights-path-first-80", "env": {"STATUSLINE_WEIGHTS": "path=5,branch=6", "COLUMNS": "80"}},
+    {"name": "weights-malformed-80", "env": {"STATUSLINE_WEIGHTS": "path=x,=3,branch=1000,context", "COLUMNS": "80"}},
+    {"name": "line-gap-2", "env": {"STATUSLINE_LINE_GAP": "2"}},
+    {"name": "line-gap-9", "env": {"STATUSLINE_LINE_GAP": "9"}},
+    {"name": "icons-off", "env": {"STATUSLINE_ICON_OS": "false", "STATUSLINE_ICON_MODEL": "false", "STATUSLINE_ICON_PATH": "false", "STATUSLINE_ICON_GIT": "false"}}
+  ]
+}

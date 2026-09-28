@@ -1,0 +1,800 @@
+[
+  {
+    "scenario": "activity-dir",
+    "variant": "cols-200",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "200"
+    },
+    "sha256": "cf0674d22ee442b1cb7ceec293407dcd713b147ac41acf9d3bc475740a535282",
+    "exit": 0
+  },
+  {
+    "scenario": "activity-dir",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "b697d57b73e0014e07f645d413ea02fd5bdb15be61d5453b85ef91800ff7ac52",
+    "exit": 0
+  },
+  {
+    "scenario": "activity-gitdash-c",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "443530ace43d78534ddf282ee958bd5b945c9c0f6392ad44ab1c195374a33e01",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "colors-256",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_COLORS": "256"
+    },
+    "sha256": "e3c14cef6a24bad6bf783d71223bda3fb14f34b73df5e82ccd75b5857b633586",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "colorterm-24bit",
+    "scope": "black-box",
+    "env": {
+      "COLORTERM": "24bit"
+    },
+    "sha256": "733a61d0d62051e9a78bf321375fdfe04963c82ba9fe6587e16181c49cee20c8",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "colorterm-absent",
+    "scope": "black-box",
+    "env": {
+      "COLORTERM": ""
+    },
+    "sha256": "e3c14cef6a24bad6bf783d71223bda3fb14f34b73df5e82ccd75b5857b633586",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "cols-100",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "100"
+    },
+    "sha256": "294c06ce805719127580737497e1eb068d4b9e07cd6129fcc9e862d403fa5e6b",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "cols-160",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "160"
+    },
+    "sha256": "af3abce90163bc9b5ac88e00a8b9c592980389e4199ac271e4c15e78ca8ddf8e",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "cols-200",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "200"
+    },
+    "sha256": "f71fd9f9015639c40546d82c916e7d7412eb5c03533903724c22fb8cae8e86c9",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "cols-40",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "40"
+    },
+    "sha256": "e912ce0362140318bcc50cdb3fc725c805a00e274454044afd98a1393faf394e",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "cols-60",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "60"
+    },
+    "sha256": "e912ce0362140318bcc50cdb3fc725c805a00e274454044afd98a1393faf394e",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "cols-72",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "72"
+    },
+    "sha256": "e912ce0362140318bcc50cdb3fc725c805a00e274454044afd98a1393faf394e",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "cols-80",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "80"
+    },
+    "sha256": "e912ce0362140318bcc50cdb3fc725c805a00e274454044afd98a1393faf394e",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "cols-absent",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": ""
+    },
+    "sha256": "733a61d0d62051e9a78bf321375fdfe04963c82ba9fe6587e16181c49cee20c8",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "cols-garbage",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "wide"
+    },
+    "sha256": "733a61d0d62051e9a78bf321375fdfe04963c82ba9fe6587e16181c49cee20c8",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "cols-huge",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "20000"
+    },
+    "sha256": "733a61d0d62051e9a78bf321375fdfe04963c82ba9fe6587e16181c49cee20c8",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "733a61d0d62051e9a78bf321375fdfe04963c82ba9fe6587e16181c49cee20c8",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "glyphs-text",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_GLYPHS": "text"
+    },
+    "sha256": "ce8257005a5aa704145015cb5a0b166b9c274108520c099184155ba1982814f7",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "glyphs-text-80",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "80",
+      "STATUSLINE_GLYPHS": "text"
+    },
+    "sha256": "1767899f804c1ea1b9b3bd8dd8487b764b5cc35198efa4fab29238809337dd76",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "hide-all",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_HIDE": "context,session,weekly,model,credits,health"
+    },
+    "sha256": "aa45474b4d75fc46f96f8472f2cd6d77c270d3bf84086467a4938187c56026d4",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "hide-context-weekly",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_HIDE": "context,weekly"
+    },
+    "sha256": "fc0a0d3c8defdad4fdbc6b6186b7783ee51279b8a12e94b6927ac384ae2538f8",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "hide-unknown",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_HIDE": "nothing, ,Context"
+    },
+    "sha256": "5923d2cc05bdf0768d519616c9fb649c1bc401eb5352a4876285822fd53c9550",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "icons-off",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_ICON_GIT": "false",
+      "STATUSLINE_ICON_MODEL": "false",
+      "STATUSLINE_ICON_OS": "false",
+      "STATUSLINE_ICON_PATH": "false"
+    },
+    "sha256": "55b1d0458d6c7077e7bba476a171c56c0e39d9015ea525cf1c2983ea910bb40e",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "line-gap-2",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_LINE_GAP": "2"
+    },
+    "sha256": "5f1cf6650a4c9516882fad5109ceecd5d707941c164c9bd28877cca5745d1b77",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "line-gap-9",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_LINE_GAP": "9"
+    },
+    "sha256": "733a61d0d62051e9a78bf321375fdfe04963c82ba9fe6587e16181c49cee20c8",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "mcp-line-2",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_MCP_LINE": "2"
+    },
+    "sha256": "ba98c2b80b3fbfc039740cbd84d3ac53c227300ab650737d584c31236193fe50",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "mcp-line-2-80",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "80",
+      "STATUSLINE_MCP_LINE": "2"
+    },
+    "sha256": "d5e4c817ba4790f6f9dc7350438c03af29a598c86b41d733f5f5a1673623b336",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "weights-malformed-80",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "80",
+      "STATUSLINE_WEIGHTS": "path=x,=3,branch=1000,context"
+    },
+    "sha256": "e912ce0362140318bcc50cdb3fc725c805a00e274454044afd98a1393faf394e",
+    "exit": 0
+  },
+  {
+    "scenario": "busy",
+    "variant": "weights-path-first-80",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "80",
+      "STATUSLINE_WEIGHTS": "path=5,branch=6"
+    },
+    "sha256": "e912ce0362140318bcc50cdb3fc725c805a00e274454044afd98a1393faf394e",
+    "exit": 0
+  },
+  {
+    "scenario": "config-relocated",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "de1ae61327cd0d3e2e5c954bb2d964c7894c26a332fae3f185c19846ac2059ab",
+    "exit": 0
+  },
+  {
+    "scenario": "context-tokens",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "951b9e49fac0e0b2fb7ae101f5a3cd97964bd5f8cc2876100648586102c3ae74",
+    "exit": 0
+  },
+  {
+    "scenario": "degrade-empty-stdin",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "c3fd47e80f200a5a00455a15589a8507eb9f7345e88464454718b033e5715c79",
+    "exit": 0
+  },
+  {
+    "scenario": "degrade-empty-stdin",
+    "variant": "glyphs-text",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_GLYPHS": "text"
+    },
+    "sha256": "d8c24bce4db4f2f3803a17edcabaf8909368428f321ea9de83f5010f433a6b9b",
+    "exit": 0
+  },
+  {
+    "scenario": "degrade-malformed-stdin",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "c3fd47e80f200a5a00455a15589a8507eb9f7345e88464454718b033e5715c79",
+    "exit": 0
+  },
+  {
+    "scenario": "degrade-wrong-types",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "c3fd47e80f200a5a00455a15589a8507eb9f7345e88464454718b033e5715c79",
+    "exit": 0
+  },
+  {
+    "scenario": "health-absent",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "4e7121c53667cccfde315717307e0a600ed00e48b5c93dde7871d47849dabceb",
+    "exit": 0
+  },
+  {
+    "scenario": "health-aging",
+    "variant": "default",
+    "scope": "legacy-only",
+    "sha256": "16a85d650f91b6cb9711fa0543b49cb6e54142525b69c28d486ea34cf8d9160a",
+    "exit": 0
+  },
+  {
+    "scenario": "health-degraded",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "16a85d650f91b6cb9711fa0543b49cb6e54142525b69c28d486ea34cf8d9160a",
+    "exit": 0
+  },
+  {
+    "scenario": "health-down",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "e8c5bb9e1b18bcf7fb394339ebb71e34f62b52a85b995186e0fafd214001f719",
+    "exit": 0
+  },
+  {
+    "scenario": "health-major",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "e8c5bb9e1b18bcf7fb394339ebb71e34f62b52a85b995186e0fafd214001f719",
+    "exit": 0
+  },
+  {
+    "scenario": "health-malformed",
+    "variant": "default",
+    "scope": "legacy-only",
+    "sha256": "4e7121c53667cccfde315717307e0a600ed00e48b5c93dde7871d47849dabceb",
+    "exit": 0
+  },
+  {
+    "scenario": "health-stale",
+    "variant": "default",
+    "scope": "legacy-only",
+    "sha256": "4e7121c53667cccfde315717307e0a600ed00e48b5c93dde7871d47849dabceb",
+    "exit": 0
+  },
+  {
+    "scenario": "light",
+    "variant": "cols-200",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "200"
+    },
+    "sha256": "a0bfa9c47abd9eacc4df78edbbc315dcdad6c0a80b8c5185fd698e309458c1cd",
+    "exit": 0
+  },
+  {
+    "scenario": "light",
+    "variant": "cols-60",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "60"
+    },
+    "sha256": "81c5c5b87bc70c8cf98f26ec7bd869eb2ee51c17846dcd4f82e3430e8a67ffe2",
+    "exit": 0
+  },
+  {
+    "scenario": "light",
+    "variant": "cols-80",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "80"
+    },
+    "sha256": "adb440d8f45198a43a642d1db616f6a737534fa0945872ebadbe3b55790d7281",
+    "exit": 0
+  },
+  {
+    "scenario": "light",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "a0bfa9c47abd9eacc4df78edbbc315dcdad6c0a80b8c5185fd698e309458c1cd",
+    "exit": 0
+  },
+  {
+    "scenario": "makefile-demo",
+    "variant": "colors-256",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_COLORS": "256"
+    },
+    "sha256": "eb264e3c753f22c9783153078113c69e36f68fcd5ce4875d259345b84ca25775",
+    "exit": 0
+  },
+  {
+    "scenario": "makefile-demo",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "2cf5aac0fb3ae0c3f2dbfa13c3c75d94eb8b4350d38c42c82a4f71700753e4c6",
+    "exit": 0
+  },
+  {
+    "scenario": "mcp-calls",
+    "variant": "colors-256",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_COLORS": "256"
+    },
+    "sha256": "2a7d84a99b43dd8dcf6c628580217db52a7ca4fefc3859737ad45a91b42c8c36",
+    "exit": 0
+  },
+  {
+    "scenario": "mcp-calls",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "5dc9a7d8c3642b02a42d1a741a679789c7b795e6628008c03a728c22d5a2c0aa",
+    "exit": 0
+  },
+  {
+    "scenario": "mcp-calls",
+    "variant": "glyphs-text",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_GLYPHS": "text"
+    },
+    "sha256": "26492e90ab7fc7b2e31c395ab0273e69f0157afd44bbb5dad28bf30a4c93f85e",
+    "exit": 0
+  },
+  {
+    "scenario": "mcp-calls",
+    "variant": "mcp-line-2",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_MCP_LINE": "2"
+    },
+    "sha256": "54b7f6d4098bdea88f589155bb5c9e30e3182800da3a818e53fdf0ca986c7e4c",
+    "exit": 0
+  },
+  {
+    "scenario": "mcp-cmdline",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "7fa5858b90f661e00e45deb9f95a273b42b14b134229cb4113d7669e0250d733",
+    "exit": 0
+  },
+  {
+    "scenario": "mcp-cmdline-strict",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "ad7f1aae483567368223af1d62a41c4ce660b5c601bfa3b13d3067f1374a1cb9",
+    "exit": 0
+  },
+  {
+    "scenario": "mcp-project-fallback",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "67e8926e66f14e3a0b3566e8faef8ff6fbbbc66b671bd8d1e58d20ee495646b9",
+    "exit": 0
+  },
+  {
+    "scenario": "model-bare-name",
+    "variant": "colors-256",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_COLORS": "256"
+    },
+    "sha256": "06a573df4c648af2f18facd30b144d68cddc1ab70d0854f49e81a6597171d5d4",
+    "exit": 0
+  },
+  {
+    "scenario": "model-bare-name",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "06a573df4c648af2f18facd30b144d68cddc1ab70d0854f49e81a6597171d5d4",
+    "exit": 0
+  },
+  {
+    "scenario": "model-fable",
+    "variant": "colors-256",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_COLORS": "256"
+    },
+    "sha256": "b1d78b71d74cd8794aa59c4100a1f6bca17e07ada46cf3aba1f50c621d373421",
+    "exit": 0
+  },
+  {
+    "scenario": "model-fable",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "0b808c7ce95ec2c2e18e1618b4655650403263baae29b744907d9072891c9830",
+    "exit": 0
+  },
+  {
+    "scenario": "model-haiku",
+    "variant": "colors-256",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_COLORS": "256"
+    },
+    "sha256": "5246e815cce6a118caeb7e987f097c8cacc3c591f5a838098d7ac95a9c9a36ec",
+    "exit": 0
+  },
+  {
+    "scenario": "model-haiku",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "fb21c09ff17a229778deaf3ef645ab3bfb5fd4e14959ea171524a1e4ad6814da",
+    "exit": 0
+  },
+  {
+    "scenario": "model-no-effort",
+    "variant": "colors-256",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_COLORS": "256"
+    },
+    "sha256": "1eaa0b9f8cdbd3843ad36195e505b29bfb52fad14a8356b17d10c0393b31da6a",
+    "exit": 0
+  },
+  {
+    "scenario": "model-no-effort",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "2e66ab86306f06507d28f620dc657ef8718ee624490e9a402b9a45387d3f6706",
+    "exit": 0
+  },
+  {
+    "scenario": "model-opus-fast",
+    "variant": "colors-256",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_COLORS": "256"
+    },
+    "sha256": "15e3737f880df8c82c614ac8b44426176a678e7b41543a5f4b4d7df815420f1c",
+    "exit": 0
+  },
+  {
+    "scenario": "model-opus-fast",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "870e8e7ff7e45b46b29b4ad9e39e7a029eda11ae098ff18ac678efd1a818f64e",
+    "exit": 0
+  },
+  {
+    "scenario": "model-sonnet",
+    "variant": "colors-256",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_COLORS": "256"
+    },
+    "sha256": "ebd23eaf0d875540da734a533e0b5d05b51375d9044e5a102ee10bb1ee735478",
+    "exit": 0
+  },
+  {
+    "scenario": "model-sonnet",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "69d953c7c8a72ecdca783a8f1534524074dcd4ad07d9e9483fc3c25fabd92105",
+    "exit": 0
+  },
+  {
+    "scenario": "model-unknown",
+    "variant": "colors-256",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_COLORS": "256"
+    },
+    "sha256": "85c33092414bee5f11696710aefddec4b9912b29804ad463e275a2f24f1575d8",
+    "exit": 0
+  },
+  {
+    "scenario": "model-unknown",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "85c33092414bee5f11696710aefddec4b9912b29804ad463e275a2f24f1575d8",
+    "exit": 0
+  },
+  {
+    "scenario": "not-a-repo",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "f912516287a842a7a3ec341f734180c7221b51ab38054224aedf10d20d1206a4",
+    "exit": 0
+  },
+  {
+    "scenario": "quota-pace",
+    "variant": "cols-200",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "200"
+    },
+    "sha256": "b029721c9d1ea9d392e8b7e5d22c491f4fa3e9ba75551b238481a7885ce5d186",
+    "exit": 0
+  },
+  {
+    "scenario": "quota-pace",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "225210fe4a648012dd8813b3246524578d7f20086c794d39558af99c4e4a8c7d",
+    "exit": 0
+  },
+  {
+    "scenario": "quota-pace",
+    "variant": "glyphs-text",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_GLYPHS": "text"
+    },
+    "sha256": "1f368c918e66d5e4bafa5439a7561819cecae2ed432d96cb9e2087465972a913",
+    "exit": 0
+  },
+  {
+    "scenario": "quota-rfc3339-stdin",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "68e55a3487bddb94e37838e47b8cfb9189bcfd880b6a4c20e911a1c26542fee9",
+    "exit": 0
+  },
+  {
+    "scenario": "tasks-builtin",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "8fbed7ba601533ee91cc815ab3092577f1736ecf9a243e276e103d94437bb165",
+    "exit": 0
+  },
+  {
+    "scenario": "tasks-builtin",
+    "variant": "list-id",
+    "scope": "black-box",
+    "env": {
+      "CLAUDE_CODE_TASK_LIST_ID": "shared list"
+    },
+    "sha256": "16fd7b19793b315902930fe9d09899ef8664cd6d5471783ad2c2d4f84c1227fb",
+    "exit": 0
+  },
+  {
+    "scenario": "tasks-builtin-listid",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "9528e1641e078f28de13b9aef0ca06681090a8dfa638d918c150a4f11ffa0e6b",
+    "exit": 0
+  },
+  {
+    "scenario": "tasks-epics-idle",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "94dde4b9acfb5b3f9e4a99ecea1ee125860712142ca15cbd78bcd9df572140c2",
+    "exit": 0
+  },
+  {
+    "scenario": "tasks-epics-working",
+    "variant": "colors-256",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_COLORS": "256"
+    },
+    "sha256": "c14aa07f98491496931e8da52f97e90a1e6905c255bc8de494e3292f317a13b4",
+    "exit": 0
+  },
+  {
+    "scenario": "tasks-epics-working",
+    "variant": "cols-60",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "60"
+    },
+    "sha256": "82c5c60d2d0b33063f3b72e46371392a7477e13ddb8f4657c12c425c1f133491",
+    "exit": 0
+  },
+  {
+    "scenario": "tasks-epics-working",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "8c37978c1674d4bbef459019b25a51909dc8de0234639aae91bd47b7dc3fd613",
+    "exit": 0
+  },
+  {
+    "scenario": "tasks-epics-working",
+    "variant": "glyphs-text",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_GLYPHS": "text"
+    },
+    "sha256": "5cf50103b2ea881437388442fb8552e8417f7ce0d92f8203487bcfbbdaac7f3b",
+    "exit": 0
+  },
+  {
+    "scenario": "tasks-malformed",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "16fd7b19793b315902930fe9d09899ef8664cd6d5471783ad2c2d4f84c1227fb",
+    "exit": 0
+  },
+  {
+    "scenario": "tasks-v1",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "c1424e3777aae5413b82fe57b568f7ad062bb21a3e9327dd5463bb77bb6938d9",
+    "exit": 0
+  },
+  {
+    "scenario": "usage-absent",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "5fb157b59e876324aa812b1f623bfcd4861f9f47fd458c6c21ebd64f434b4e22",
+    "exit": 0
+  },
+  {
+    "scenario": "usage-api-only",
+    "variant": "cols-80",
+    "scope": "black-box",
+    "env": {
+      "COLUMNS": "80"
+    },
+    "sha256": "30c2a10f411b3ce5c9f08d2cb2139e897e7224804a7e49d2418a8a7020b9772e",
+    "exit": 0
+  },
+  {
+    "scenario": "usage-api-only",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "5fc196d55430a2dee7c93ccb2223bbe7121749e593bbf5c59afb5dd3a7456a96",
+    "exit": 0
+  },
+  {
+    "scenario": "usage-api-only",
+    "variant": "hide-credits",
+    "scope": "black-box",
+    "env": {
+      "STATUSLINE_HIDE": "credits"
+    },
+    "sha256": "5fc196d55430a2dee7c93ccb2223bbe7121749e593bbf5c59afb5dd3a7456a96",
+    "exit": 0
+  },
+  {
+    "scenario": "usage-legacy-buckets",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "38f19483c6b242856e6919fbd9c9ef59708bf223f31c8d4d52ea094f45e83f3c",
+    "exit": 0
+  },
+  {
+    "scenario": "usage-malformed",
+    "variant": "default",
+    "scope": "legacy-only",
+    "sha256": "5fb157b59e876324aa812b1f623bfcd4861f9f47fd458c6c21ebd64f434b4e22",
+    "exit": 0
+  },
+  {
+    "scenario": "usage-null-buckets",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "de30d44f5356409c8132b6060e420916fc05c3efe99108a0323921c54529da74",
+    "exit": 0
+  },
+  {
+    "scenario": "usage-stdin-wins",
+    "variant": "default",
+    "scope": "black-box",
+    "sha256": "483dbe7e3d6910b27dc43d6cd230ec4989c3115b34e1b5218f60b4fa847253c6",
+    "exit": 0
+  }
+]

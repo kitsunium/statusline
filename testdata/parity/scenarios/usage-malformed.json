@@ -1,0 +1,25 @@
+{
+  "description": "An undecodable payload never masquerades as zero usage.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}"
+    },
+    "context_window": {
+      "used_percentage": 30
+    }
+  },
+  "credentials": true,
+  "scope": "legacy-only",
+  "note": "the new daemon never stores an undecodable payload; decoding refusal is checked by the collect usage unit test",
+  "usage": [
+    "not",
+    "an",
+    "object"
+  ],
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "description": "The same board while the session is idle: every epic folded.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}/work/atlas"
+    },
+    "context_window": {
+      "used_percentage": 20,
+      "context_window_size": 200000
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 20,
+        "resets_at": "{{epoch:+12000}}"
+      }
+    },
+    "effort": {
+      "level": "high"
+    },
+    "session_id": "parity-session-0003",
+    "transcript_path": "{{home}}/.claude/projects/-work-atlas/parity-session-0003.jsonl"
+  },
+  "repos": [
+    {
+      "dir": "home/work/atlas",
+      "branch": "main",
+      "commit": {
+        "README.md": "atlas\n"
+      }
+    }
+  ],
+  "host": {
+    "args": [],
+    "cwd": "home/work/atlas"
+  },
+  "files": {
+    "home/.claude/kodflow/sessions/parity-session-0003/tasks.json": {
+      "version": 2,
+      "epics": [
+        {
+          "id": 1,
+          "agent": "main",
+          "title": "Oracle de parité",
+          "touched": 200
+        },
+        {
+          "id": 2,
+          "agent": "main",
+          "title": "design/",
+          "touched": 300
+        },
+        {
+          "id": 3,
+          "agent": "main",
+          "title": "done epic",
+          "touched": 400
+        },
+        {
+          "id": 4,
+          "agent": "helper",
+          "title": "not main",
+          "touched": 500
+        }
+      ],
+      "active": {
+        "main": 1,
+        "helper": 4
+      },
+      "tasks": [
+        {
+          "id": "1",
+          "agent": "main",
+          "epic": 1,
+          "subject": "Capturer les goldens",
+          "status": "completed"
+        },
+        {
+          "id": "2",
+          "agent": "main",
+          "epic": 1,
+          "subject": "Mesurer la latence",
+          "status": "in_progress"
+        },
+        {
+          "id": "3",
+          "agent": "main",
+          "epic": 1,
+          "subject": "Écrire le harnais",
+          "status": "pending"
+        },
+        {
+          "id": "4",
+          "agent": "main",
+          "epic": 1,
+          "subject": "Valider",
+          "status": "waiting"
+        },
+        {
+          "id": "5",
+          "agent": "main",
+          "epic": 2,
+          "subject": "Contextes",
+          "status": "pending"
+        },
+        {
+          "id": "6",
+          "agent": "main",
+          "epic": 3,
+          "subject": "fini",
+          "status": "completed"
+        },
+        {
+          "id": "7",
+          "agent": "main",
+          "epic": 0,
+          "subject": "hors épic",
+          "status": "pending",
+          "created": 100
+        },
+        {
+          "id": "8",
+          "agent": "helper",
+          "epic": 4,
+          "subject": "theirs",
+          "status": "pending"
+        }
+      ]
+    },
+    "home/.claude/kodflow/sessions/parity-session-0003/agents.json": {
+      "agents": {
+        "a1": {
+          "started": "{{epoch:-60}}",
+          "epic": 1
+        },
+        "a2": {
+          "started": "{{epoch:-60}}",
+          "epic": 0
+        },
+        "a3": {
+          "started": "{{epoch:-60}}",
+          "stopped": "{{epoch:-10}}",
+          "epic": 1
+        },
+        "a4": {
+          "started": "{{epoch:-50000}}",
+          "epic": 1
+        },
+        "a5": {
+          "started": "{{epoch:-30}}",
+          "epic": 9
+        }
+      }
+    },
+    "home/.claude/sessions/{{pid}}.json": {
+      "pid": "{{pid}}",
+      "sessionId": "parity-session-0003",
+      "status": "idle"
+    }
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

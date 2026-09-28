@@ -1,0 +1,6 @@
+{
+  "description": "Nothing on stdin, nothing on disk, no network: the line still renders from what the process can establish alone, and exits 0.",
+  "env": {"COLORTERM": "truecolor"},
+  "stdin_raw": "",
+  "variants": [{"name": "default"}, {"name": "glyphs-text", "env": {"STATUSLINE_GLYPHS": "text"}}]
+}

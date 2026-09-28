@@ -1,0 +1,5 @@
+{
+  "description": "A payload whose fields carry the wrong JSON types is a malformed payload: zero input.",
+  "env": {"COLORTERM": "truecolor"},
+  "stdin": {"model": {"display_name": 5}, "context_window": "full"}
+}

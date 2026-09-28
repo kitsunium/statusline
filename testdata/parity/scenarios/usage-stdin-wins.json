@@ -1,0 +1,48 @@
+{
+  "description": "stdin and API both carry session and weekly: stdin wins; the API only adds the scoped quota.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}"
+    },
+    "context_window": {
+      "used_percentage": 30
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 5,
+        "resets_at": "{{epoch:+17000}}"
+      },
+      "seven_day": {
+        "used_percentage": 3,
+        "resets_at": "{{epoch:+600000}}"
+      }
+    }
+  },
+  "credentials": true,
+  "usage": {
+    "limits": [
+      {
+        "kind": "five_hour",
+        "group": "session",
+        "percent": 99,
+        "resets_at": "{{rfc3339:+100}}"
+      },
+      {
+        "kind": "weekly_scoped",
+        "percent": 2,
+        "resets_at": "{{rfc3339:+600000}}",
+        "scope": {
+          "model": {
+            "display_name": "Opus"
+          }
+        }
+      }
+    ]
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

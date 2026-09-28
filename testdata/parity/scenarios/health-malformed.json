@@ -1,0 +1,28 @@
+{
+  "description": "An undecodable summary is no evidence: nothing drawn.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}"
+    },
+    "context_window": {
+      "used_percentage": 5
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 40,
+        "resets_at": "{{epoch:+9000}}"
+      }
+    }
+  },
+  "scope": "legacy-only",
+  "note": "the new daemon refuses to keep an undecodable summary, as the legacy refresh did; checked by the collect health unit test",
+  "health": {
+    "components": "nope"
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

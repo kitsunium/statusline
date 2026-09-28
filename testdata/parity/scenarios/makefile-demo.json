@@ -1,0 +1,6 @@
+{
+  "description": "The input of the legacy `make demo`: an old payload with token totals only, no rate limits, no session, a directory that does not exist.",
+  "env": {"COLORTERM": "truecolor"},
+  "stdin": {"model": {"display_name": "Opus 4.5"}, "workspace": {"current_dir": "~/project"}, "context_window": {"total_input_tokens": 15000, "total_output_tokens": 5000, "context_window_size": 200000}},
+  "variants": [{"name": "default"}, {"name": "colors-256", "env": {"STATUSLINE_COLORS": "256"}}]
+}

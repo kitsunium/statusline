@@ -1,0 +1,86 @@
+{
+  "description": "stdin carries no rate limits: session and weekly come from the API limits[] array, with the scoped quota shown only for the model in use (Opus, not Sonnet), and the credit balance.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}"
+    },
+    "context_window": {
+      "used_percentage": 30
+    }
+  },
+  "credentials": true,
+  "usage": {
+    "limits": [
+      {
+        "kind": "five_hour",
+        "group": "session",
+        "percent": 72,
+        "resets_at": "{{rfc3339:+3000}}"
+      },
+      {
+        "kind": "seven_day",
+        "group": "weekly",
+        "percent": 35,
+        "resets_at": "{{rfc3339:+300000}}"
+      },
+      {
+        "kind": "weekly_scoped",
+        "group": "weekly",
+        "percent": 81,
+        "resets_at": "{{rfc3339:+300000}}",
+        "scope": {
+          "model": {
+            "display_name": "Opus"
+          }
+        }
+      },
+      {
+        "kind": "weekly_scoped",
+        "group": "weekly",
+        "percent": 9,
+        "resets_at": "{{rfc3339:+300000}}",
+        "scope": {
+          "model": {
+            "id": "claude-sonnet"
+          }
+        }
+      },
+      {
+        "kind": "weekly_scoped",
+        "group": "weekly",
+        "resets_at": "{{rfc3339:+300000}}"
+      }
+    ],
+    "extra_usage": {
+      "is_enabled": true,
+      "monthly_limit": 10000,
+      "used_credits": 9150,
+      "utilization": 91.5,
+      "currency": "EUR",
+      "decimal_places": 2
+    }
+  },
+  "variants": [
+    {
+      "name": "default"
+    },
+    {
+      "name": "cols-80",
+      "env": {
+        "COLUMNS": "80"
+      }
+    },
+    {
+      "name": "hide-credits",
+      "env": {
+        "STATUSLINE_HIDE": "credits"
+      }
+    }
+  ],
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}
