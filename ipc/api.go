@@ -92,6 +92,11 @@ type Instance struct {
 	Cache  string
 	State  string
 	Log    string
+	// PID names the running daemon's process.
+	PID string
+	// Heartbeat is touched by the daemon on every tick: a daemon that holds
+	// the socket but lets it go stale is stuck, and the client replaces it.
+	Heartbeat string
 }
 
 // CachePath is the file holding the last snapshot of a key.

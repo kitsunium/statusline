@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"os"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -77,6 +78,8 @@ func (d *Daemon) run(in RunInput) int {
 		return 1
 	}
 
+	_ = os.WriteFile(in.Instance.PID, []byte(strconv.Itoa(os.Getpid())), socketPerm)
+	defer func() { _ = os.Remove(in.Instance.PID) }()
 	s := &server{deps: d.deps, in: in, started: d.deps.Clock.Now(), log: log, stopped: make(chan struct{})}
 	log.printf("started version=%s pid=%d", in.Version, os.Getpid())
 	go s.accept(ln)
@@ -113,6 +116,7 @@ func (s *server) loop() {
 // tick refreshes what is due, evicts idle sessions, stops when none is left
 // for EvictAfter, and starts an update check in the background.
 func (s *server) tick() {
+	s.beat()
 	ctx := context.Background()
 	if _, err := s.deps.Refresh.Execute(ctx, refresh.RefreshInput{}); err != nil {
 		s.log.printf("refresh: %v", err)
@@ -131,6 +135,15 @@ func (s *server) tick() {
 	}
 	if s.updating.CompareAndSwap(false, true) {
 		go s.checkUpdate()
+	}
+}
+
+// beat touches the heartbeat: the proof, for a client that got no answer,
+// that this daemon still ticks.
+func (s *server) beat() {
+	now := time.Now()
+	if err := os.Chtimes(s.in.Instance.Heartbeat, now, now); err != nil {
+		_ = os.WriteFile(s.in.Instance.Heartbeat, nil, socketPerm)
 	}
 }
 

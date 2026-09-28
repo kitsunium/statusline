@@ -8,6 +8,8 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kitsunium/statusline/ipc"
@@ -41,9 +43,12 @@ func (l *Link) snapshot(ctx context.Context, key ipc.Key) (snapshot.Snapshot, po
 	if err == nil && resp.Snapshot != nil {
 		return *resp.Snapshot, port.OriginDaemon
 	}
-	// Start one only where none answers or an older one was just stopped: a
-	// slow or newer daemon is left alone, it is the one that stays
-	if errors.Is(err, errOlder) || isDialError(err) {
+	// Start one only where none answers, an older one was just stopped, or a
+	// mute one was just killed: a slow or newer daemon is left alone
+	switch {
+	case errors.Is(err, errOlder) || isDialError(err):
+		l.start()
+	case isTimeout(err) && l.replaceMute():
 		l.start()
 	}
 	if snap, ok := l.readCache(key); ok {
@@ -145,6 +150,35 @@ func (l *Link) start() {
 		return
 	}
 	_ = cmd.Process.Release()
+}
+
+// staleAfter is how long a heartbeat may go untouched: the daemon touches it
+// every second, so ten seconds without a beat is a stuck process.
+const staleAfter time.Duration = 10 * time.Second
+
+// isTimeout reports an exchange that ran out of its budget.
+func isTimeout(err error) bool {
+	var ne net.Error
+	return errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &ne) && ne.Timeout())
+}
+
+// replaceMute kills the instance's daemon when it holds the socket but its
+// heartbeat is stale; the kernel then releases its lock. It reports whether
+// a daemon was killed.
+func (l *Link) replaceMute() bool {
+	info, err := os.Stat(l.cfg.Instance.Heartbeat)
+	if err != nil || time.Since(info.ModTime()) < staleAfter {
+		return false
+	}
+	data, err := os.ReadFile(l.cfg.Instance.PID)
+	if err != nil {
+		return false
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err != nil || pid <= 1 || pid == os.Getpid() {
+		return false
+	}
+	return kill(pid) == nil
 }
 
 // isDialError reports that no daemon listens: no socket, or a dead one.

@@ -38,11 +38,12 @@ docs/adr           decisions the design's evidence points to
 
 - Instance = (UID, CLAUDE_CONFIG_DIR or ~/.claude, executable path), under
   `$XDG_RUNTIME_DIR/statusline-<uid>/<digest>/` (0700): `daemon.sock`, the
-  SDK file lock, `cache/<key>.json`, `state/{network,update}.json`,
-  `daemon.log` (256 KiB, one rotation).
+  SDK file lock, `daemon.pid`, `heartbeat`, `cache/<key>.json`,
+  `state/{network,update}.json`, `daemon.log` (256 KiB, one rotation).
 - The client dials with a 250 ms budget; no daemon → renders the key's cache
   and starts `statusline daemon`; an older daemon is asked to stop and
-  replaced; a newer one is never stopped.
+  replaced; a newer one is never stopped; a mute one (no answer, heartbeat
+  10 s stale) is killed and replaced.
 - The daemon: snapshot served as is for 750 ms, else collected; key evicted
   after 60 s; stops when no key is left for 60 s, or after installing an
   update. Usage API at most once a minute, 429 Retry-After persisted,

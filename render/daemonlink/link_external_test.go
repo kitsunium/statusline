@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -212,5 +214,85 @@ func TestControlWithoutDaemon(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 	if _, err := os.Stat(marker); err == nil {
 		t.Error("status or stop started a daemon")
+	}
+}
+
+func TestMuteDaemonIsReplaced(t *testing.T) {
+	inst, exe, marker := setup(t)
+	if err := os.MkdirAll(inst.Dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	// A daemon that accepts and never answers, with a stale heartbeat
+	ln, err := net.Listen("unix", inst.Socket)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = ln.Close() }()
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			defer func() { _ = conn.Close() }()
+		}
+	}()
+	mute := exec.Command("sleep", "30")
+	if err := mute.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = mute.Process.Kill(); _, _ = mute.Process.Wait() }()
+	if err := os.WriteFile(inst.PID, []byte(strconv.Itoa(mute.Process.Pid)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(inst.Heartbeat, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	old := time.Now().Add(-time.Minute)
+	_ = os.Chtimes(inst.Heartbeat, old, old)
+
+	link := daemonlink.New(daemonlink.Config{Instance: inst, Version: "v1.0.0", Executable: exe, Budget: 100 * time.Millisecond})
+	if _, origin := link.Snapshot(context.Background(), ipc.Key{}); origin == port.OriginDaemon {
+		t.Fatal("a mute daemon answered")
+	}
+	state, _ := mute.Process.Wait()
+	if state == nil || state.Success() {
+		t.Error("the mute daemon was not killed")
+	}
+	if !started(marker) {
+		t.Error("no daemon was started after killing the mute one")
+	}
+}
+
+func TestSlowDaemonWithAFreshHeartbeatIsLeftAlone(t *testing.T) {
+	inst, exe, marker := setup(t)
+	if err := os.MkdirAll(inst.Dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	ln, err := net.Listen("unix", inst.Socket)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = ln.Close() }()
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			defer func() { _ = conn.Close() }()
+		}
+	}()
+	if err := os.WriteFile(inst.Heartbeat, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(inst.PID, []byte("999999"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	link := daemonlink.New(daemonlink.Config{Instance: inst, Version: "v1.0.0", Executable: exe, Budget: 100 * time.Millisecond})
+	_, _ = link.Snapshot(context.Background(), ipc.Key{})
+	time.Sleep(200 * time.Millisecond)
+	if _, err := os.Stat(marker); err == nil {
+		t.Error("a daemon was started beside a slow but living one")
 	}
 }

@@ -93,6 +93,8 @@ spec:
         - {name: Cache, type: string}
         - {name: State, type: string}
         - {name: Log, type: string}
+        - {name: PID, type: string}
+        - {name: Heartbeat, type: string, description: "touched by the daemon every tick; stale for 10 s with a socket that does not answer = a mute daemon, which the client kills and replaces"}
       methods:
         - {name: CachePath, signature: "CachePath(key Key) string", receiver: value}
     - id: ipc/vo/locate-input

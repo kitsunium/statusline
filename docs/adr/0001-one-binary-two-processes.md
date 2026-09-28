@@ -27,6 +27,11 @@ too often, and the legacy product had no memory of it.
   (length-prefixed JSON). Each sends Hello; the client asks an **older**
   daemon to stop and starts its own; it **never stops a newer one** and
   renders from the cache instead.
+- The daemon touches a heartbeat file every second and records its pid. A
+  daemon that accepts a connection but does not answer within the client's
+  budget while its heartbeat is ten seconds stale is mute: the client kills
+  it (the kernel releases its lock) and starts a new one. A slow daemon with
+  a fresh heartbeat is left alone.
 - A client that cannot reach a warm daemon renders the key's cached snapshot
   (written by the daemon after each collection) in at most 50 ms, and starts
   the daemon for the next redraw.

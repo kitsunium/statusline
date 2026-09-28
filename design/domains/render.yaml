@@ -54,6 +54,8 @@ spec:
         asks for the snapshot; on a missing, cold or incompatible daemon
         reads the instance's cache instead (≤ 50 ms) and starts the daemon
         with os.Executable() in the background. Never stops a newer daemon.
+        A daemon that accepts but does not answer within the budget while
+        its heartbeat is 10 s stale is mute: it is killed and replaced.
       uses: [ipc/component/ipc, snapshot/component/snapshot]
       implements: [render/port/snapshot-source@v1, render/port/daemon-control@v1]
     - id: render/component/systemclock
