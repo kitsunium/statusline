@@ -387,8 +387,3 @@ func sortByID(items []snapshot.TaskItem) []snapshot.TaskItem {
 	})
 	return items
 }
-
-// board reads one session at one instant.
-func (s *Store) board(sessionID, listID string, now time.Time) snapshot.TaskBoard {
-	return newBoard(sessionID, listID, now).board()
-}

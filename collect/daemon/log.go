@@ -3,7 +3,6 @@ package daemon
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -70,6 +69,3 @@ func (l *boundedLog) close() {
 		l.file = nil
 	}
 }
-
-// itoa keeps the handler free of a strconv import.
-func itoa(n int) string { return strconv.Itoa(n) }

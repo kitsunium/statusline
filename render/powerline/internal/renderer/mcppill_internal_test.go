@@ -35,7 +35,7 @@ func TestSummarizeMCP(t *testing.T) {
 	if got := summarizeMCP(list); !got.busy {
 		t.Error("a disabled server being called still lights the pill")
 	}
-	ghost := servers(1, 0).WithBusy([]string{"ghost"})
+	ghost := model.WithBusy(servers(1, 0), []string{"ghost"})
 	if got := summarizeMCP(ghost); got != (mcpSummary{on: 2, busy: true}) {
 		t.Errorf("an undeclared server being called counts as enabled, got %+v", got)
 	}

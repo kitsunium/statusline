@@ -59,7 +59,7 @@ type reader struct {
 //
 // Returns:
 //   - *reader: reader for that project
-func newReader(base *Reader, projectDir string, hostPID int) *reader {
+func newReader(base *config, projectDir string, hostPID int) *reader {
 	return &reader{
 		projectDir:  projectDir,
 		configDir:   base.configDir,
@@ -73,9 +73,9 @@ func newReader(base *Reader, projectDir string, hostPID int) *reader {
 // newBase resolves the configuration locations from the environment.
 //
 // Returns:
-//   - *Reader: locations of the global config, the managed file and /proc
-func newBase() *Reader {
-	p := &Reader{managedPath: managedConfigPath()}
+//   - *config: locations of the global config, the managed file and /proc
+func newBase() *config {
+	p := &config{managedPath: managedConfigPath()}
 	home, _ := os.UserHomeDir()
 	p.configDir = os.Getenv(configDirEnv)
 	// A relocated config directory holds the global config file too
@@ -104,30 +104,30 @@ func newBase() *Reader {
 // in the global config's entry for this project mark servers disabled.
 //
 // Returns:
-//   - snapshot.MCPServers: list of MCP server configurations
-func (p *reader) servers() snapshot.MCPServers {
+//   - []snapshot.MCPServer: list of MCP server configurations
+func (p *reader) servers() []snapshot.MCPServer {
 	global := p.readGlobalConfig()
 	local := global.Projects[p.projectDir]
 	cli := p.readCommandLine()
 
-	sources := []snapshot.MCPServers{
-		p.readManagedConfig().WithSource(snapshot.MCPSourceManaged),
-		cli.servers.WithSource(snapshot.MCPSourceCLI),
+	sources := [][]snapshot.MCPServer{
+		snapshot.WithSource(p.readManagedConfig(), snapshot.MCPSourceManaged),
+		snapshot.WithSource(cli.servers, snapshot.MCPSourceCLI),
 	}
 	// Strict mode ignores every configured scope but the managed one
 	if !cli.strict {
 		project := p.readProjectConfig()
 		markDisabled(project, local.DisabledMcpjsonServers)
 		sources = append(sources,
-			convertServers(local.MCPServers, "").WithSource(snapshot.MCPSourceLocal),
-			project.WithSource(snapshot.MCPSourceProject),
-			convertServers(global.MCPServers, "").WithSource(snapshot.MCPSourceUser),
-			p.readPluginServers().WithSource(snapshot.MCPSourcePlugin),
+			snapshot.WithSource(convertServers(local.MCPServers, ""), snapshot.MCPSourceLocal),
+			snapshot.WithSource(project, snapshot.MCPSourceProject),
+			snapshot.WithSource(convertServers(global.MCPServers, ""), snapshot.MCPSourceUser),
+			snapshot.WithSource(p.readPluginServers(), snapshot.MCPSourcePlugin),
 		)
 	}
 
 	seen := make(map[string]bool, defaultMapCapacity)
-	servers := make(snapshot.MCPServers, 0, defaultSliceCapacity)
+	servers := make([]snapshot.MCPServer, 0, defaultSliceCapacity)
 	// Walk the sources in precedence order: the first to name a server wins
 	for _, source := range sources {
 		// Keep only the names no stronger source already declared
@@ -204,8 +204,8 @@ func (p *reader) readGlobalConfig() userConfigFile {
 // Tries .mcp.json first, then falls back to mcp.json (undotted).
 //
 // Returns:
-//   - snapshot.MCPServers: list of MCP servers from project config
-func (p *reader) readProjectConfig() snapshot.MCPServers {
+//   - []snapshot.MCPServer: list of MCP servers from project config
+func (p *reader) readProjectConfig() []snapshot.MCPServer {
 	// Take the first project file that parses
 	for _, path := range p.projectConfigPaths() {
 		var config mcpConfigFile
@@ -215,18 +215,18 @@ func (p *reader) readProjectConfig() snapshot.MCPServers {
 		}
 		return convertServers(config.MCPServers, "")
 	}
-	return snapshot.MCPServers{}
+	return []snapshot.MCPServer{}
 }
 
 // readManagedConfig reads MCP servers from enterprise managed config.
 //
 // Returns:
-//   - snapshot.MCPServers: list of MCP servers from managed-mcp.json
-func (p *reader) readManagedConfig() snapshot.MCPServers {
+//   - []snapshot.MCPServer: list of MCP servers from managed-mcp.json
+func (p *reader) readManagedConfig() []snapshot.MCPServer {
 	var config mcpConfigFile
 	// No managed path, or no readable managed file, declares nothing
 	if p.managedPath == "" || !readJSON(p.managedPath, &config) {
-		return snapshot.MCPServers{}
+		return []snapshot.MCPServer{}
 	}
 	return convertServers(config.MCPServers, "")
 }
@@ -239,7 +239,7 @@ func (p *reader) readManagedConfig() snapshot.MCPServers {
 // Params:
 //   - servers: servers to update in place
 //   - names: names listed as disabled
-func markDisabled(servers snapshot.MCPServers, names []string) {
+func markDisabled(servers []snapshot.MCPServer, names []string) {
 	// Nothing listed, nothing to do
 	if len(names) == 0 {
 		return
@@ -266,11 +266,11 @@ func markDisabled(servers snapshot.MCPServers, names []string) {
 //   - plugin: plugin providing the servers, empty for a config file
 //
 // Returns:
-//   - snapshot.MCPServers: slice of MCP servers, sorted by name
-func convertServers(servers map[string]mcpServerConfig, plugin string) snapshot.MCPServers {
+//   - []snapshot.MCPServer: slice of MCP servers, sorted by name
+func convertServers(servers map[string]mcpServerConfig, plugin string) []snapshot.MCPServer {
 	// Check if servers map is empty
 	if len(servers) == 0 {
-		return snapshot.MCPServers{}
+		return []snapshot.MCPServer{}
 	}
 
 	names := make([]string, 0, len(servers))
@@ -280,7 +280,7 @@ func convertServers(servers map[string]mcpServerConfig, plugin string) snapshot.
 	}
 	sort.Strings(names)
 
-	result := make(snapshot.MCPServers, 0, len(servers))
+	result := make([]snapshot.MCPServer, 0, len(servers))
 	// Convert map to slice in sorted order
 	for _, name := range names {
 		result = append(result, snapshot.MCPServer{
@@ -290,9 +290,4 @@ func convertServers(servers map[string]mcpServerConfig, plugin string) snapshot.
 		})
 	}
 	return result
-}
-
-// servers reads one project's servers.
-func (r *Reader) servers(projectDir string, hostPID int) snapshot.MCPServers {
-	return newReader(r, projectDir, hostPID).servers()
 }

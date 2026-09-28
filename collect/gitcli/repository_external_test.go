@@ -1,6 +1,7 @@
 package gitcli_test
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -55,14 +56,24 @@ func repo(t *testing.T) string {
 	return dir
 }
 
+var ctx = context.Background()
+
+// must drops a nil error: the adapter never returns one.
+func must[T any](v T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 func TestStatusAndDiff(t *testing.T) {
 	dir := repo(t)
-	r := gitcli.New()
+	r := gitcli.NewGit()
 	want := snapshot.GitStatus{Branch: "feat/x", Modified: 2, Untracked: 1, Worktrees: 1}
-	if got := r.Status(dir); got != want {
+	if got := must(r.Status(ctx, dir)); got != want {
 		t.Errorf("Status() = %+v, want %+v", got, want)
 	}
-	if got, want := r.DiffStats(dir), (snapshot.Changes{Added: 2, Removed: 2}); got != want {
+	if got, want := must(r.DiffStats(ctx, dir)), (snapshot.Changes{Added: 2, Removed: 2}); got != want {
 		t.Errorf("DiffStats() = %+v, want %+v", got, want)
 	}
 }
@@ -70,11 +81,11 @@ func TestStatusAndDiff(t *testing.T) {
 func TestOutsideARepository(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("GIT_CEILING_DIRECTORIES", filepath.Dir(dir))
-	r := gitcli.New()
-	if got := r.Status(dir); got != (snapshot.GitStatus{}) {
+	r := gitcli.NewGit()
+	if got := must(r.Status(ctx, dir)); got != (snapshot.GitStatus{}) {
 		t.Errorf("Status() outside a repository = %+v, want zero", got)
 	}
-	if got := r.DiffStats(dir); got != (snapshot.Changes{}) {
+	if got := must(r.DiffStats(ctx, dir)); got != (snapshot.Changes{}) {
 		t.Errorf("DiffStats() outside a repository = %+v, want zero", got)
 	}
 }

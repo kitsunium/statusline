@@ -231,6 +231,3 @@ func gitRoot(dir string) string {
 		}
 	}
 }
-
-// dir is the port method's twin.
-func (r *Reader) dir(transcriptPath, fallback string) string { return dir(transcriptPath, fallback) }

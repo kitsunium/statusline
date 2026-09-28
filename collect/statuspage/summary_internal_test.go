@@ -15,7 +15,7 @@ func TestClassify(t *testing.T) {
 	tests := []struct {
 		name string
 		body string
-		want snapshot.Health
+		want int
 	}{
 		{name: "all up, government ignored", body: `{"components":[{"name":"claude.ai","status":"operational"},{"name":"CLI","status":"operational"},{"name":"Claude for Government","status":"major_outage"}]}`, want: snapshot.HealthOK},
 		{name: "one partial", body: `{"components":[{"name":"claude.ai","status":"partial_outage"},{"name":"CLI","status":"operational"}]}`, want: snapshot.HealthDegraded},
@@ -56,12 +56,12 @@ func TestFetch(t *testing.T) {
 		_, _ = w.Write([]byte(`{"components":[{"name":"a","status":"operational"}]}`))
 	}))
 	defer srv.Close()
-	c := New(func(key string) string {
+	c := &StatusPage{newPage(func(key string) string {
 		if key == urlEnv {
 			return srv.URL
 		}
 		return ""
-	})
+	})}
 	if got, err := c.Fetch(context.Background()); err != nil || got != snapshot.HealthOK {
 		t.Errorf("Fetch() = %v, %v", got, err)
 	}
@@ -69,7 +69,7 @@ func TestFetch(t *testing.T) {
 	if _, err := c.Fetch(context.Background()); err == nil {
 		t.Error("a 502 was accepted")
 	}
-	if New(func(string) string { return "" }).url != defaultURL {
+	if newPage(func(string) string { return "" }).url != defaultURL {
 		t.Error("the default URL is not used without an override")
 	}
 }

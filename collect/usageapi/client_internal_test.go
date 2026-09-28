@@ -16,7 +16,7 @@ import (
 
 // serve answers every request with a status, headers and a body, and
 // records the last request.
-func serve(t *testing.T, status int, header map[string]string, body string, seen **http.Request) *Client {
+func serve(t *testing.T, status int, header map[string]string, body string, seen **http.Request) *Usage {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if seen != nil {
@@ -29,12 +29,12 @@ func serve(t *testing.T, status int, header map[string]string, body string, seen
 		_, _ = w.Write([]byte(body))
 	}))
 	t.Cleanup(srv.Close)
-	return New(func(key string) string {
+	return &Usage{newEndpoint(func(key string) string {
 		if key == urlEnv {
 			return srv.URL
 		}
 		return ""
-	})
+	})}
 }
 
 func TestFetchSendsTheTokenAndTheBeta(t *testing.T) {

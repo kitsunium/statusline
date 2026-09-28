@@ -2,6 +2,7 @@ package releases
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -14,6 +15,7 @@ import (
 	"github.com/kitsunium/sdk/pkg/v1/selfupdate"
 
 	"github.com/kitsunium/statusline/collect/state"
+	"github.com/kitsunium/statusline/ipc"
 )
 
 const (
@@ -37,15 +39,55 @@ type updater interface {
 	Upgrade() (selfupdate.Update, error)
 }
 
-func newSource(cfg Config) *Source {
+// vendorKey is the base64 ed25519 key releases are signed with, set at
+// release time: -ldflags "-X github.com/kitsunium/statusline/collect/releases.vendorKey=…".
+// Without it nothing is ever installed.
+var vendorKey string
+
+// config is what a build knows about itself.
+type config struct {
+	// Version is the running release; empty for a development build.
+	Version string
+	// Executable is the path of the running binary.
+	Executable string
+	// VendorKey is the ed25519 key releases are signed with.
+	VendorKey []byte
+}
+
+// releases is the build's identity and the SDK's update service.
+type releases struct {
+	cfg config
+	svc updater
+}
+
+// newReleases reads the build's identity.
+func newReleases() *Releases {
+	key, _ := base64.StdEncoding.DecodeString(vendorKey)
+	return newReleasesWith(config{Version: ipc.BuildVersion(), Executable: executable(), VendorKey: key})
+}
+
+// newReleasesWith builds on an explicit identity.
+func newReleasesWith(cfg config) *Releases {
 	svc := selfupdate.New(cfg.Version, selfupdate.Source{Owner: owner, StableRepo: repo, Product: repo})
 	if len(cfg.VendorKey) > 0 {
 		svc = svc.WithVendorKey(cfg.VendorKey)
 	}
-	return &Source{cfg: cfg, svc: svc}
+	return &Releases{releases{cfg: cfg, svc: svc}}
 }
 
-func (s *Source) latest(_ context.Context) (state.Release, error) {
+// executable is this binary, symbolic links resolved.
+func executable() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		return resolved
+	}
+	return exe
+}
+
+func (s *Releases) latest(_ context.Context) (state.Release, error) {
 	info, err := s.svc.CheckForUpdate()
 	if err != nil {
 		return state.Release{}, err
@@ -58,7 +100,7 @@ func (s *Source) latest(_ context.Context) (state.Release, error) {
 
 // install copies the running binary aside first: the SDK's replacement is
 // atomic but keeps nothing to return to.
-func (s *Source) install(_ context.Context, rel state.Release) error {
+func (s *Releases) install(_ context.Context, rel state.Release) error {
 	if len(s.cfg.VendorKey) == 0 {
 		return errNotSigned
 	}
@@ -76,7 +118,7 @@ func (s *Source) install(_ context.Context, rel state.Release) error {
 }
 
 // probe accepts the new binary only when it runs and names itself.
-func (s *Source) probe(ctx context.Context) error {
+func (s *Releases) probe(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 	defer cancel()
 	out, err := exec.CommandContext(ctx, s.cfg.Executable, "--version").Output()
@@ -89,7 +131,7 @@ func (s *Source) probe(ctx context.Context) error {
 	return nil
 }
 
-func (s *Source) rollback(_ context.Context) error {
+func (s *Releases) rollback(_ context.Context) error {
 	return os.Rename(s.cfg.Executable+prevSuffix, s.cfg.Executable)
 }
 

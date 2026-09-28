@@ -14,12 +14,12 @@ import (
 // Quotas.
 type (
 	Limit         = quota.Limit
-	LimitKind     = quota.Kind
-	LimitSource   = quota.Source
+	LimitKind     = string
+	LimitSource   = string
 	LimitSet      = quota.Set
 	ExtraUsage    = quota.Extra
 	Progress      = quota.Progress
-	ProgressLevel = quota.Level
+	ProgressLevel = int
 )
 
 // Quota constants.
@@ -54,15 +54,15 @@ func NewProgress(totalTokens, contextSize int) Progress {
 type (
 	GitStatus     = snapshot.GitStatus
 	CodeChanges   = snapshot.Changes
-	MCPSource     = snapshot.MCPSource
+	MCPSource     = string
 	MCPServer     = snapshot.MCPServer
-	MCPServers    = snapshot.MCPServers
+	MCPServers    = []snapshot.MCPServer
 	TaskItem      = snapshot.TaskItem
 	TaskList      = snapshot.TaskList
 	Epic          = snapshot.Epic
 	TaskBoard     = snapshot.TaskBoard
-	ServiceHealth = snapshot.Health
-	OSType        = snapshot.OS
+	ServiceHealth = int
+	OSType        = int
 	SystemInfo    = snapshot.System
 	UpdateInfo    = snapshot.UpdateNotice
 )
@@ -162,3 +162,6 @@ type StatusLineData struct {
 	// drawn at; the legacy renderer read the wall clock itself.
 	Now time.Time
 }
+
+// WithBusy lights the servers being called.
+func WithBusy(servers MCPServers, keys []string) MCPServers { return snapshot.WithBusy(servers, keys) }

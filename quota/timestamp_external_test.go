@@ -31,11 +31,11 @@ func TestTimestamp_UnmarshalJSON(t *testing.T) {
 			if err := json.Unmarshal([]byte(tt.raw), &ts); err != nil {
 				t.Fatalf("UnmarshalJSON() error = %v, want nil", err)
 			}
-			if ts.IsZero() == tt.wantSet {
-				t.Fatalf("UnmarshalJSON() IsZero = %v, want set = %v", ts.IsZero(), tt.wantSet)
+			if ts.Time.IsZero() == tt.wantSet {
+				t.Fatalf("UnmarshalJSON() IsZero = %v, want set = %v", ts.Time.IsZero(), tt.wantSet)
 			}
-			if tt.wantSet && ts.UTC().Unix() != tt.wantSec {
-				t.Errorf("UnmarshalJSON() unix = %d, want %d", ts.UTC().Unix(), tt.wantSec)
+			if tt.wantSet && ts.Time.UTC().Unix() != tt.wantSec {
+				t.Errorf("UnmarshalJSON() unix = %d, want %d", ts.Time.UTC().Unix(), tt.wantSec)
 			}
 		})
 	}
@@ -51,7 +51,7 @@ func TestTimestamp_BothFormatsAgree(t *testing.T) {
 	if err := json.Unmarshal([]byte(`"2026-09-18T22:30:00Z"`), &rfc); err != nil {
 		t.Fatalf("rfc decode error = %v", err)
 	}
-	if !epoch.Equal(rfc.Time) {
+	if !epoch.Time.Equal(rfc.Time) {
 		t.Errorf("epoch %v and rfc3339 %v decode to different instants", epoch.Time, rfc.Time)
 	}
 	if epoch.Time.Location() == nil || rfc.Time.Location() == nil {

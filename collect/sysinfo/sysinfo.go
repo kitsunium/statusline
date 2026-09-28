@@ -17,11 +17,7 @@ const (
 	dockerIdentifier string = "docker"
 )
 
-func (r *Reader) info() snapshot.System {
-	return snapshot.System{OS: detectOS(), IsDocker: isDocker()}
-}
-
-func detectOS() snapshot.OS {
+func detectOS() int {
 	switch runtime.GOOS {
 	case "linux":
 		return snapshot.OSLinux

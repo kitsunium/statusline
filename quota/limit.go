@@ -19,36 +19,11 @@ const (
 	maxPercent int = 100
 )
 
-// newProgress computes a context usage percentage, capped at 100.
-func newProgress(totalTokens, contextSize int) Progress {
-	// A window of unknown size holds nothing
-	if contextSize <= 0 {
-		return Progress{}
-	}
-	percent := min(totalTokens*maxPercent/contextSize, maxPercent)
-	// Negative token counts are upstream noise, not a negative usage
-	return Progress{Percent: max(percent, 0)}
-}
-
-// level maps the percentage to its severity.
-func (p Progress) level() Level {
-	switch {
-	case p.Percent < thresholdMedium:
-		return LevelLow
-	case p.Percent < thresholdHigh:
-		return LevelMedium
-	case p.Percent < thresholdCritical:
-		return LevelHigh
-	default:
-		return LevelCritical
-	}
-}
-
-// unmarshalJSON decodes an epoch in seconds or an RFC 3339 string. Mixing
+// UnmarshalJSON decodes an epoch in seconds or an RFC 3339 string. Mixing
 // the two silently used to yield a zero time, which reads as "quota absent";
 // anything undecodable is still the zero instant, but never an error, so a
 // single odd field cannot void a whole payload.
-func (t *Timestamp) unmarshalJSON(data []byte) error {
+func (t *Timestamp) UnmarshalJSON(data []byte) error {
 	t.Time = time.Time{}
 	trimmed := bytes.TrimSpace(data)
 	// A JSON null or nothing at all carries no instant
@@ -73,20 +48,6 @@ func (t *Timestamp) unmarshalJSON(data []byte) error {
 	}
 	t.Time = time.Unix(int64(epoch), 0)
 	return nil
-}
-
-// newLimit clamps the percentage so an upstream overshoot renders as full
-// and a negative value cannot invert a bar.
-func newLimit(kind Kind, label string, percent int, resetsAt time.Time, window time.Duration, source Source) Limit {
-	return Limit{
-		Kind:     kind,
-		Label:    label,
-		Percent:  min(max(percent, 0), maxPercent),
-		ResetsAt: resetsAt,
-		Window:   window,
-		Active:   true,
-		Source:   source,
-	}
 }
 
 // isValid: the context window is timeless, so a source is enough; every

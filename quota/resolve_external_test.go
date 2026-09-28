@@ -7,11 +7,11 @@ import (
 	"github.com/kitsunium/statusline/quota"
 )
 
-func stdinLimit(kind quota.Kind, label string, percent int) quota.Limit {
+func stdinLimit(kind string, label string, percent int) quota.Limit {
 	return quota.NewLimit(kind, label, percent, time.Now().Add(time.Hour), quota.SessionWindow, quota.SourceStdin)
 }
 
-func apiLimit(kind quota.Kind, label string, percent int) quota.Limit {
+func apiLimit(kind string, label string, percent int) quota.Limit {
 	return quota.NewLimit(kind, label, percent, time.Now().Add(time.Hour), quota.SessionWindow, quota.SourceAPI)
 }
 

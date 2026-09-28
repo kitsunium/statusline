@@ -8,12 +8,13 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/kitsunium/statusline/ipc"
-	"github.com/kitsunium/statusline/render/port"
+	"github.com/kitsunium/statusline/render/show"
 	"github.com/kitsunium/statusline/snapshot"
 )
 
@@ -28,20 +29,54 @@ var (
 	errEmpty = errors.New("daemon answered without a snapshot")
 )
 
-func newLink(cfg Config) *Link {
+// config is what the link knows about the client and its instance.
+type config struct {
+	Instance   ipc.Instance
+	Version    string
+	Executable string
+	// Budget bounds one exchange with the daemon; zero means defaultBudget.
+	Budget time.Duration
+}
+
+// link is the Link's own state.
+type link struct {
+	cfg config
+}
+
+// newLink locates the instance of this executable; without one the line
+// still renders, from stdin alone.
+func newLink() *Link {
+	instance, _ := ipc.Here()
+	return newLinkWith(config{Instance: instance, Version: ipc.BuildVersion(), Executable: executable()})
+}
+
+// newLinkWith builds a link on an explicit configuration.
+func newLinkWith(cfg config) *Link {
 	if cfg.Budget <= 0 {
 		cfg.Budget = defaultBudget
 	}
-	return &Link{cfg: cfg}
+	return &Link{link{cfg: cfg}}
+}
+
+// executable is this binary, symbolic links resolved.
+func executable() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		return resolved
+	}
+	return exe
 }
 
 // snapshot starts a daemon whenever the answer did not come from a
 // compatible one of this version or newer; the line is then drawn from the
 // key's cache, written by the daemon after each collection.
-func (l *Link) snapshot(ctx context.Context, key ipc.Key) (snapshot.Snapshot, port.SnapshotOrigin) {
+func (l *Link) snapshot(ctx context.Context, key ipc.Key) (snapshot.Snapshot, string, error) {
 	resp, err := l.exchange(ctx, ipc.Request{Op: ipc.OpSnapshot, Key: key}, true)
 	if err == nil && resp.Snapshot != nil {
-		return *resp.Snapshot, port.OriginDaemon
+		return *resp.Snapshot, show.OriginDaemon, nil
 	}
 	// Start one only where none answers, an older one was just stopped, or a
 	// mute one was just killed: a slow or newer daemon is left alone
@@ -52,9 +87,9 @@ func (l *Link) snapshot(ctx context.Context, key ipc.Key) (snapshot.Snapshot, po
 		l.start()
 	}
 	if snap, ok := l.readCache(key); ok {
-		return snap, port.OriginCache
+		return snap, show.OriginCache, nil
 	}
-	return snapshot.Snapshot{}, port.OriginNone
+	return snapshot.Snapshot{}, show.OriginNone, nil
 }
 
 func (l *Link) status(ctx context.Context) (ipc.Status, error) {

@@ -24,7 +24,7 @@ func TestTokenIsReadOnEveryCall(t *testing.T) {
 	}
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	s := New(func(string) string { return "" })
+	s := &Credentials{credentials{getenv: func(string) string { return "" }}}
 	if _, err := s.Token(context.Background()); err == nil {
 		t.Error("a token was found where there is none")
 	}
@@ -52,12 +52,12 @@ func TestTokenRelocatedConfigFirst(t *testing.T) {
 	t.Setenv("HOME", home)
 	write(t, filepath.Join(home, ".claude", credentialsFileName), `{"claudeAiOauth":{"accessToken":"home"}}`)
 	write(t, filepath.Join(cfg, credentialsFileName), `{"claudeAiOauth":{"accessToken":"relocated"}}`)
-	s := New(func(key string) string {
+	s := &Credentials{credentials{getenv: func(key string) string {
 		if key == configDirEnv {
 			return cfg
 		}
 		return ""
-	})
+	}}}
 	if got, _ := s.Token(context.Background()); got != "relocated" {
 		t.Errorf("Token() = %q, want the relocated one", got)
 	}

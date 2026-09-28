@@ -23,26 +23,27 @@ type sessionFile struct {
 	Status    string `json:"status"`
 }
 
-func newRegistry() *Registry {
+// registryDir is <config>/sessions; empty without a home.
+func registryDir() string {
 	base := os.Getenv(configDirEnv)
 	if base == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {
-			return &Registry{}
+			return ""
 		}
 		base = filepath.Join(home, ".claude")
 	}
-	return &Registry{dir: filepath.Join(base, "sessions")}
+	return filepath.Join(base, "sessions")
 }
 
 // lookup takes the first entry naming the session; files mid-write or
 // malformed are skipped, never fatal, and files naming another session are
 // not even decoded.
-func (r *Registry) lookup(sessionID string) (state.HostSession, bool) {
-	if r.dir == "" || sessionID == "" {
+func lookup(dir, sessionID string) (state.HostSession, bool) {
+	if dir == "" || sessionID == "" {
 		return state.HostSession{}, false
 	}
-	paths, err := filepath.Glob(filepath.Join(r.dir, "*.json"))
+	paths, err := filepath.Glob(filepath.Join(dir, "*.json"))
 	if err != nil {
 		return state.HostSession{}, false
 	}

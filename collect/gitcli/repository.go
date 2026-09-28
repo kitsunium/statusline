@@ -17,8 +17,6 @@ const (
 	minNumstatParts int = 2
 )
 
-func newRepository() *Repository { return &Repository{} }
-
 // command runs git in dir; a relative or empty dir keeps the daemon's own
 // working directory, as the legacy client kept its own.
 func command(dir string, args ...string) *exec.Cmd {
@@ -29,7 +27,7 @@ func command(dir string, args ...string) *exec.Cmd {
 	return cmd
 }
 
-func (r *Repository) status(dir string) snapshot.GitStatus {
+func readStatus(dir string) snapshot.GitStatus {
 	out, err := command(dir, "branch", "--show-current").Output()
 	// Outside a repository there is no branch and no status
 	if err != nil {
@@ -87,7 +85,7 @@ func changeCounts(dir string) (modified, untracked int) {
 	return modified, untracked
 }
 
-func (r *Repository) diffStats(dir string) snapshot.Changes {
+func readDiffStats(dir string) snapshot.Changes {
 	out, err := command(dir, "diff", "--numstat", "HEAD").Output()
 	if err != nil {
 		return snapshot.Changes{}

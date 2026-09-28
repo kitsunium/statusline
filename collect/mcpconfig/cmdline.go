@@ -22,7 +22,7 @@ const (
 
 // commandLine is what the host's command line says about MCP servers.
 type commandLine struct {
-	servers snapshot.MCPServers
+	servers []snapshot.MCPServer
 	strict  bool
 }
 

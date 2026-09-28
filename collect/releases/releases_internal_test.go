@@ -35,7 +35,7 @@ func (f *fakeUpdater) Upgrade() (selfupdate.Update, error) {
 	return selfupdate.Update{LatestVersion: f.latest, Available: true}, nil
 }
 
-func setup(t *testing.T, script string) (*Source, *fakeUpdater, string) {
+func setup(t *testing.T, script string) (*Releases, *fakeUpdater, string) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
 		t.Skip("shell scripts stand for binaries")
@@ -45,7 +45,7 @@ func setup(t *testing.T, script string) (*Source, *fakeUpdater, string) {
 		t.Fatal(err)
 	}
 	fake := &fakeUpdater{exe: exe, latest: "v1.1.0", script: script}
-	return &Source{cfg: Config{Version: "v1.0.0", Executable: exe, VendorKey: []byte("key")}, svc: fake}, fake, exe
+	return &Releases{releases{cfg: config{Version: "v1.0.0", Executable: exe, VendorKey: []byte("key")}, svc: fake}}, fake, exe
 }
 
 func TestInstallKeepsPreviousAndProbes(t *testing.T) {

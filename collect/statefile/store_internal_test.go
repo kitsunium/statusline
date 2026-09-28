@@ -1,6 +1,7 @@
 package statefile
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,33 +12,35 @@ import (
 	"github.com/kitsunium/statusline/snapshot"
 )
 
+var ctx = context.Background()
+
 func TestRoundTrips(t *testing.T) {
 	inst := ipc.Locate(ipc.LocateInput{RuntimeDir: t.TempDir(), UID: 1000, ConfigDir: "/c", Executable: "/e"})
-	s := New(inst)
+	s := newFilesAt(inst)
 
-	n, err := s.LoadNetwork()
+	n, err := s.LoadNetwork(ctx)
 	if err != nil || n.UsageDue(time.Now()) != true {
 		t.Fatalf("LoadNetwork() before any save = %+v, %v", n, err)
 	}
 	at := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	saved := state.Network{UsageRetryAfter: at, UsageStatus: 429, HealthFetchedAt: at, Health: snapshot.HealthDegraded}
-	if err := s.SaveNetwork(saved); err != nil {
+	if err := s.SaveNetwork(ctx, saved); err != nil {
 		t.Fatal(err)
 	}
-	got, err := s.LoadNetwork()
+	got, err := s.LoadNetwork(ctx)
 	if err != nil || !got.UsageRetryAfter.Equal(at) || got.UsageStatus != 429 || got.Health != snapshot.HealthDegraded {
 		t.Errorf("LoadNetwork() = %+v, %v", got, err)
 	}
 
-	if err := s.SaveUpdate(state.Update{BadVersion: "v9.9.9"}); err != nil {
+	if err := s.SaveUpdate(ctx, state.Update{BadVersion: "v9.9.9"}); err != nil {
 		t.Fatal(err)
 	}
-	if u, err := s.LoadUpdate(); err != nil || u.BadVersion != "v9.9.9" {
+	if u, err := s.LoadUpdate(ctx); err != nil || u.BadVersion != "v9.9.9" {
 		t.Errorf("LoadUpdate() = %+v, %v", u, err)
 	}
 
 	key := ipc.Key{SessionID: "s", SessionDir: "/w"}
-	if err := s.SaveSnapshot(key, snapshot.Snapshot{WorkDir: "/w", Git: snapshot.GitStatus{Branch: "main"}}); err != nil {
+	if err := s.SaveSnapshot(ctx, key, snapshot.Snapshot{WorkDir: "/w", Git: snapshot.GitStatus{Branch: "main"}}); err != nil {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(inst.CachePath(key))
@@ -64,7 +67,7 @@ func TestCorruptStateIsAnError(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(inst.State, networkFile), []byte("{"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := New(inst).LoadNetwork(); err == nil {
+	if _, err := newFilesAt(inst).LoadNetwork(ctx); err == nil {
 		t.Error("a corrupt state file was read as empty without a word")
 	}
 }

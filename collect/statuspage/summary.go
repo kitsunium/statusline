@@ -26,11 +26,6 @@ const (
 	excludedComponent string = "government"
 )
 
-// doer sends a request; *http.Client in production.
-type doer interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
 // summary is the part of the payload read here.
 type summary struct {
 	Components []component `json:"components"`
@@ -43,15 +38,15 @@ type component struct {
 	Group  bool   `json:"group"`
 }
 
-func newClient(getenv func(string) string) *Client {
+func newPage(getenv func(string) string) statusPage {
 	url := defaultURL
 	if override := strings.TrimSpace(getenv(urlEnv)); override != "" {
 		url = override
 	}
-	return &Client{url: url, doer: &http.Client{Timeout: httpTimeout}}
+	return statusPage{url: url, doer: &http.Client{Timeout: httpTimeout}}
 }
 
-func (c *Client) fetch(ctx context.Context) (snapshot.Health, error) {
+func (c statusPage) get(ctx context.Context) (int, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.url, nil)
 	if err != nil {
 		return snapshot.HealthUnknown, fmt.Errorf("status page: %w", err)
@@ -74,7 +69,7 @@ func (c *Client) fetch(ctx context.Context) (snapshot.Health, error) {
 // classify counts the individual services this account depends on: a group
 // only restates its members, and the public-sector deployment is not ours.
 // An undecodable summary is refused, never stored as a level.
-func classify(data []byte) (snapshot.Health, error) {
+func classify(data []byte) (int, error) {
 	var parsed summary
 	if err := json.Unmarshal(data, &parsed); err != nil {
 		return snapshot.HealthUnknown, fmt.Errorf("status page: decode: %w", err)

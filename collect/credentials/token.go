@@ -34,13 +34,13 @@ type credentialsFile struct {
 	} `json:"claudeAiOauth"`
 }
 
-func (s *Store) token(ctx context.Context) (string, error) {
+func readToken(ctx context.Context, getenv func(string) string) (string, error) {
 	if runtime.GOOS == "darwin" {
 		if token := keychainToken(ctx); token != "" {
 			return token, nil
 		}
 	}
-	for _, path := range s.candidates() {
+	for _, path := range candidates(getenv) {
 		if token := fileToken(path); token != "" {
 			return token, nil
 		}
@@ -49,9 +49,9 @@ func (s *Store) token(ctx context.Context) (string, error) {
 }
 
 // candidates lists the credentials files, the relocated directory first.
-func (s *Store) candidates() []string {
+func candidates(getenv func(string) string) []string {
 	var paths []string
-	if dir := s.getenv(configDirEnv); dir != "" {
+	if dir := getenv(configDirEnv); dir != "" {
 		paths = append(paths, filepath.Join(dir, credentialsFileName))
 	}
 	if home, err := os.UserHomeDir(); err == nil {

@@ -23,26 +23,26 @@ const (
 	updateFile string = "update.json"
 )
 
-func (s *Store) loadNetwork() (state.Network, error) {
+func loadNetwork(instance ipc.Instance) (state.Network, error) {
 	var n state.Network
-	return n, readJSON(filepath.Join(s.instance.State, networkFile), &n)
+	return n, readJSON(filepath.Join(instance.State, networkFile), &n)
 }
 
-func (s *Store) saveNetwork(n state.Network) error {
-	return writeJSON(filepath.Join(s.instance.State, networkFile), n)
+func saveNetwork(instance ipc.Instance, n state.Network) error {
+	return writeJSON(filepath.Join(instance.State, networkFile), n)
 }
 
-func (s *Store) saveSnapshot(key ipc.Key, snap snapshot.Snapshot) error {
-	return writeJSON(s.instance.CachePath(key), snap)
+func saveSnapshot(instance ipc.Instance, key ipc.Key, snap snapshot.Snapshot) error {
+	return writeJSON(instance.CachePath(key), snap)
 }
 
-func (s *Store) loadUpdate() (state.Update, error) {
+func loadUpdate(instance ipc.Instance) (state.Update, error) {
 	var u state.Update
-	return u, readJSON(filepath.Join(s.instance.State, updateFile), &u)
+	return u, readJSON(filepath.Join(instance.State, updateFile), &u)
 }
 
-func (s *Store) saveUpdate(u state.Update) error {
-	return writeJSON(filepath.Join(s.instance.State, updateFile), u)
+func saveUpdate(instance ipc.Instance, u state.Update) error {
+	return writeJSON(filepath.Join(instance.State, updateFile), u)
 }
 
 // readJSON leaves dst untouched when the file does not exist yet.

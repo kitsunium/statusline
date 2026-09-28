@@ -274,8 +274,3 @@ func serverKey(name string) string {
 	}
 	return server
 }
-
-// busy scans one session at one instant.
-func (r *Reader) busy(transcriptPath, sessionID string, now time.Time) []string {
-	return newCalls(transcriptPath, sessionID, now).busy()
-}

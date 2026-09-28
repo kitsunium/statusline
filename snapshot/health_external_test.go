@@ -10,7 +10,7 @@ func TestClassifyHealth(t *testing.T) {
 	tests := []struct {
 		name   string
 		states []string
-		want   snapshot.Health
+		want   int
 	}{
 		{name: "nothing to judge", states: nil, want: snapshot.HealthUnknown},
 		{name: "all operational", states: []string{"operational", "operational"}, want: snapshot.HealthOK},

@@ -1,11 +1,9 @@
 package powerline
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/kitsunium/statusline/render/powerline/internal/model"
-	"github.com/kitsunium/statusline/render/powerline/internal/renderer"
 )
 
 // Terminal width bounds.
@@ -17,46 +15,6 @@ const (
 	// timeFormat is the clock the legacy data carried.
 	timeFormat string = "15:04:05"
 )
-
-// render converts the frame to the renderer's vocabulary and draws it.
-func render(frame Frame) string {
-	return renderer.NewPowerline().Render(toData(frame))
-}
-
-// condensed asks the renderer which segments gave way.
-func condensed(frame Frame) []string {
-	return renderer.Condensed(toData(frame))
-}
-
-func visibleWidth(s string) int {
-	return renderer.VisibleWidth(s)
-}
-
-// parseWidth: the host gives the status line its room in COLUMNS; the
-// process's own stdout is a pipe, and /dev/tty would report the whole window.
-func parseWidth(value string) int {
-	width, err := strconv.Atoi(strings.TrimSpace(value))
-	if err != nil || width <= 0 || width > maxWidth {
-		return defaultWidth
-	}
-	return width
-}
-
-// iconsFromEnv: every icon is on unless its switch says false, 0 or no.
-func iconsFromEnv(getenv func(string) string) Icons {
-	icons := Icons{OS: true, Path: true, Git: true, Model: true}
-	for name, dst := range map[string]*bool{
-		"STATUSLINE_ICON_OS":    &icons.OS,
-		"STATUSLINE_ICON_PATH":  &icons.Path,
-		"STATUSLINE_ICON_GIT":   &icons.Git,
-		"STATUSLINE_ICON_MODEL": &icons.Model,
-	} {
-		if val := getenv(name); val != "" {
-			*dst = parseBool(val)
-		}
-	}
-	return icons
-}
 
 // parseBool is lenient: only an explicit negative switches off.
 func parseBool(s string) bool {

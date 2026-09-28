@@ -33,7 +33,7 @@ func TestProgress_Level(t *testing.T) {
 	tests := []struct {
 		name    string
 		percent int
-		want    quota.Level
+		want    int
 	}{
 		{name: "low 0", percent: 0, want: quota.LevelLow},
 		{name: "low 49", percent: 49, want: quota.LevelLow},

@@ -7,7 +7,8 @@ import (
 
 // here resolves symbolic links so that a client started through a link and
 // the daemon it starts agree on the executable, hence on the instance.
-func here(getenv func(string) string) (Instance, error) {
+func here() (Instance, error) {
+	getenv := os.Getenv
 	exe, err := os.Executable()
 	if err != nil {
 		return Instance{}, err

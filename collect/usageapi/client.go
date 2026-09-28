@@ -27,20 +27,15 @@ const (
 	maxBody int64 = 1 << 20
 )
 
-// doer sends a request; *http.Client in production.
-type doer interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
-func newClient(getenv func(string) string) *Client {
+func newEndpoint(getenv func(string) string) usage {
 	url := defaultURL
 	if override := strings.TrimSpace(getenv(urlEnv)); override != "" {
 		url = override
 	}
-	return &Client{url: url, doer: &http.Client{Timeout: httpTimeout}}
+	return usage{url: url, doer: &http.Client{Timeout: httpTimeout}}
 }
 
-func (c *Client) fetch(ctx context.Context, token string) (quota.Set, error) {
+func (c usage) get(ctx context.Context, token string) (quota.Set, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.url, nil)
 	if err != nil {
 		return quota.Set{}, fmt.Errorf("%w: %v", state.ErrUsageUnavailable, err)
