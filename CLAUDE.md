@@ -13,8 +13,8 @@ which, the links each body makes, the wiring of each process role. Bodies
 are free. `kit gen` (platform, version pinned by `kit.version`, read by the
 CI and by kit's own toolchain switch) writes
 `*_gen.go` / `*_gen_test.go` — never edit them — and, once, the skeleton of
-each hand-written twin in `<name>.go`. Twins live in those files: `kit gen`
-recreates a missing one even when the twin sits elsewhere. `kit gen -check`
+each hand-written twin in `<name>.go` (a twin already declared elsewhere in
+the package is left alone). `kit gen -check`
 and `lourd kit check` must stay green; `closed: true` with no exceptions.
 
 - Every implemented method or function carries a named property
@@ -80,8 +80,12 @@ docs/adr           decisions the design's evidence points to
 - `make test` (race), `make design` (kit gen -check, kit check), `kit test`
   (tests per component),
   `make parity` (88 black-box goldens must pass), `make latency`.
-- `kit harness install` writes the kit hooks locally (generated files
-  refused to Write/Edit, a digest check on Stop); they are never committed,
-  nor is any entry for them in .gitignore — the CI is the authority (D7).
+- `kit harness install` writes the kit hooks into this clone's local
+  settings and excludes them through `.git/info/exclude` (generated files
+  refused to Write/Edit, a digest check on Stop, each hook on the kit that
+  `kit.version` names); nothing of it is committed — the CI is the
+  authority (D7). Rerun it after bumping `kit.version`.
+- `kit test` judges regressions against the base branch's last report (the
+  `kit-test-report` artifact of the ci run on main).
 - Test data is synthetic only: the repository is public.
 - Commits: conventional, author Kodflow, no AI attribution (post-commit gate).

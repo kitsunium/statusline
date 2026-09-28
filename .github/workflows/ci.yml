@@ -84,6 +84,9 @@ jobs:
     # private: installing kit needs the secret KIT_READ_TOKEN.
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
     env:
       GOPRIVATE: github.com/kitsunium/*
     steps:
@@ -110,6 +113,33 @@ jobs:
       - name: kit check
         if: steps.kit.outputs.ready == 'true'
         run: kit check
-      - name: kit test (per component)
+      # Regressions are judged against the base branch's last report: the
+      # report of the latest ci run on main, kept as an artifact.
+      - name: the base branch's kit test report
+        if: steps.kit.outputs.ready == 'true' && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          id="$(gh run list -R "$GITHUB_REPOSITORY" -w ci -b "$BASE" -s success -L 1 --json databaseId --jq '.[0].databaseId // empty')"
+          if [ -n "$id" ] && gh run download "$id" -R "$GITHUB_REPOSITORY" -n kit-test-report -D "$RUNNER_TEMP/base"; then
+            echo "BASE_REPORT=$RUNNER_TEMP/base/kit-test.json" >> "$GITHUB_ENV"
+          else
+            echo "::notice::no kit test report on $BASE yet: no regression baseline"
+          fi
+      - name: kit test (per component, regressions against the base)
         if: steps.kit.outputs.ready == 'true'
-        run: kit test
+        run: |
+          if [ -n "${BASE_REPORT:-}" ]; then
+            kit test -previous "$BASE_REPORT"
+          else
+            kit test
+          fi
+          kit test -json > kit-test.json
+      - name: keep this run's report for the pull requests to come
+        if: steps.kit.outputs.ready == 'true' && github.event_name == 'push'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: kit-test-report
+          path: kit-test.json
+          retention-days: 90
