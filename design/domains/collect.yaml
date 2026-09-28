@@ -46,6 +46,9 @@ spec:
     - {id: collect/component/releases, role: adapter, package: collect/releases, uses: [collect/component/state], implements: [collect/port/release-source@v1]}
     - {id: collect/component/systemclock, role: adapter, package: collect/systemclock, uses: [], implements: [collect/port/clock@v1]}
 
+  # Port interfaces are generated whole into one package per domain; an
+  # adapter asserts it implements them, a use case holds them.
+  portsPackage: collect/port
   ports:
     - {id: collect/port/repository@v1, direction: outbound, name: Repository, methods: [{name: Status, signature: "Status(dir string) snapshot.GitStatus"}, {name: DiffStats, signature: "DiffStats(dir string) snapshot.Changes"}]}
     - {id: collect/port/mcp-config@v1, direction: outbound, name: MCPConfig, methods: [{name: Servers, signature: "Servers(projectDir string, hostPID int) snapshot.MCPServers"}]}
@@ -75,8 +78,8 @@ spec:
     - {id: collect/port/clock@v1, direction: outbound, name: Clock, methods: [{name: Now, signature: "Now() time.Time"}]}
 
   errors:
-    - {id: collect/error/rate-limited, name: RateLimited, code: statusline_rate_limited, fields: [{name: RetryAfter, type: time.Duration}], description: "HTTP 429; RetryAfter is the server's, else the back-off's"}
-    - {id: collect/error/usage-unavailable, name: ErrUsageUnavailable, code: statusline_usage_unavailable}
+    - {id: collect/error/rate-limited, component: collect/component/state, name: RateLimited, code: statusline_rate_limited, fields: [{name: RetryAfter, type: time.Duration}], description: "HTTP 429; RetryAfter is the server's, else the back-off's"}
+    - {id: collect/error/usage-unavailable, component: collect/component/state, name: ErrUsageUnavailable, code: statusline_usage_unavailable}
 
   entities:
     - id: collect/entity/registry

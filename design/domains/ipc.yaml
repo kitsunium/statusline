@@ -105,6 +105,7 @@ spec:
 
   functions:
     - {id: ipc/function/locate, name: Locate, signature: "Locate(in LocateInput) Instance", properties: [ipc/property/locate-distinct]}
+    - {id: ipc/function/here, name: Here, signature: "Here(getenv func(string) string) (Instance, error)", description: "the instance of the running executable (symbolic links resolved)"}
     - {id: ipc/function/write-frame, name: WriteFrame, signature: "WriteFrame(w io.Writer, v any) error"}
     - {id: ipc/function/read-frame, name: ReadFrame, signature: "ReadFrame(r io.Reader, v any) error", properties: [ipc/property/frame-roundtrip]}
     - {id: ipc/function/compare-versions, name: CompareVersions, signature: "CompareVersions(a, b string) int", properties: [ipc/property/versions-order]}
