@@ -56,9 +56,10 @@ type segPolicy struct {
 
 // Path and branch budgets per level.
 var (
-	// pathBudgets is the path budget per level; 1 leaves ".../<last>",
-	// the last level hides the path (only inside a repository).
-	pathBudgets = [...]int{0, 20, 1, 0}
+	// pathBudgets is the path budget per level; 1 leaves ".../<last>". The
+	// last level hides the path, but only inside a repository: outside one
+	// the path keeps its last element there rather than growing back.
+	pathBudgets = [...]int{0, 20, 1, 1}
 	// branchBudgets is the branch budget in runes per level, 0 = whole.
 	branchBudgets = [...]int{0, 20, 12, 8}
 )

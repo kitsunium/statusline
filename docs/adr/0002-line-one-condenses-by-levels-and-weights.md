@@ -16,3 +16,11 @@ The OS segment (with the MCP indicator) never shrinks; line two is never
 shortened. The successive states are cumulative and decreasing in width, so
 the first that fits is found by bisection. The oracle (`testdata/parity`)
 pins the result from 40 to 200 columns.
+
+## Amendment (2026-09-28)
+
+A property test (`render/powerline`, Condensed Monotonic) found that the
+levels were not always decreasing in width: the last path level hides the
+path only inside a repository, and outside one it fell back on the full path.
+Outside a repository the last level now keeps the path's last element. No
+golden of the parity oracle changes.
