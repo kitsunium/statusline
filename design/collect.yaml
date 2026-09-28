@@ -1,0 +1,238 @@
+# The daemon role: collect what the client renders, keep it per session key,
+# keep the network figures fresh without hammering an endpoint, and keep the
+# binary up to date silently (D11).
+apiVersion: kit.kitsunium/design/v1
+domains:
+  - name: collect
+    description: The per-instance daemon and every source it reads.
+    components:
+      - name: state
+        role: domain
+        code: 64.3.1
+        uses: [quota, snapshot]
+        description: The daemon's bookkeeping — the network with its 429 back-off, the update with its bad version.
+        evidence: [one-binary-two-processes]
+        constants:
+          - {name: EvictAfter, type: time.Duration, value: "60000000000", description: "EvictAfter is how long a key may go unrequested."}
+          - {name: Freshness, type: time.Duration, value: "750000000", description: "Freshness is how old a snapshot may be and still be served as is."}
+          - {name: UsageTTL, type: time.Duration, value: "60000000000", description: "UsageTTL is how often the usage API is asked at most."}
+          - {name: HealthTTL, type: time.Duration, value: "120000000000", description: "HealthTTL is how often the status page is asked at most."}
+          - {name: HealthMaxAge, type: time.Duration, value: "900000000000", description: "HealthMaxAge is how old a summary may be and still be drawn."}
+          - {name: UpdateInterval, type: time.Duration, value: "3600000000000", description: "UpdateInterval is how often a release is looked for."}
+        errors:
+          - {name: ErrUsageUnavailable, serial: 1, message: the usage API is unavailable}
+        values:
+          - {name: HostSession, fields: [{name: PID, type: int}, {name: Working, type: bool}]}
+          - {name: Release, fields: [{name: Version, type: string}, {name: Asset, type: string}]}
+          - name: RateLimited
+            description: The usage API's HTTP 429; RetryAfter is the server's Retry-After, zero when it gave none. An error (Error is hand-written).
+            receiver: pointer
+            fields: [{name: RetryAfter, type: time.Duration}]
+          - name: Network
+            description: Network bookkeeping, persisted so that a restarted daemon keeps honouring a 429.
+            fields:
+              - {name: Usage, type: quota.Set, tag: 'json:"usage"'}
+              - {name: HasUsage, type: bool, tag: 'json:"has_usage,omitempty"'}
+              - {name: UsageFetchedAt, type: time.Time, tag: 'json:"usage_fetched_at,omitzero"'}
+              - {name: UsageAttemptAt, type: time.Time, tag: 'json:"usage_attempt_at,omitzero"'}
+              - {name: UsageRetryAfter, type: time.Time, tag: 'json:"usage_retry_after,omitzero"'}
+              - {name: UsageFailures, type: int, tag: 'json:"usage_failures,omitempty"'}
+              - {name: UsageStatus, type: int, tag: 'json:"usage_status,omitempty"'}
+              - {name: Health, type: int, tag: 'json:"health,omitempty"'}
+              - {name: HealthFetchedAt, type: time.Time, tag: 'json:"health_fetched_at,omitzero"'}
+              - {name: HealthAttemptAt, type: time.Time, tag: 'json:"health_attempt_at,omitzero"'}
+            methods:
+              - {name: UsageDue, params: [{name: now, type: time.Time}], results: [{type: bool}], properties: [NeverBeforeRetryAfter]}
+              - {name: HealthDue, params: [{name: now, type: time.Time}], results: [{type: bool}], properties: [TTL]}
+              - {name: CurrentHealth, params: [{name: now, type: time.Time}], results: [{type: int}], properties: [UnknownPastMaxAge]}
+              - {name: RecordUsage, params: [{name: set, type: quota.Set}, {name: now, type: time.Time}], results: [{type: Network}], properties: [ResetsBackoff]}
+              - {name: RecordUsageFailure, params: [{name: status, type: int}, {name: retryAfter, type: time.Duration}, {name: now, type: time.Time}], results: [{type: Network}], properties: [BackoffBounded]}
+              - {name: RecordHealth, params: [{name: h, type: int}, {name: now, type: time.Time}], results: [{type: Network}], properties: [Fresh]}
+              - {name: RecordHealthFailure, params: [{name: now, type: time.Time}], results: [{type: Network}], properties: [KeepsLevel]}
+          - name: Update
+            fields:
+              - {name: CheckedAt, type: time.Time, tag: 'json:"checked_at,omitzero"'}
+              - {name: BadVersion, type: string, tag: 'json:"bad_version,omitempty"'}
+              - {name: Failures, type: int, tag: 'json:"failures,omitempty"'}
+              - {name: Installed, type: string, tag: 'json:"installed,omitempty"'}
+            methods:
+              - {name: Due, params: [{name: now, type: time.Time}], results: [{type: bool}], properties: [Hourly]}
+
+      - name: collector
+        role: application
+        code: 64.3.2
+        uses: [quota, snapshot, ipc, state]
+        description: What the daemon does — collect a key's snapshot, refresh the network figures, serve the last ones, update the binary — and every port it goes through.
+        ports:
+          - {name: Repository, direction: out, version: 1, methods: [{name: Status, params: [{name: dir, type: string}], results: [{type: snapshot.GitStatus}]}, {name: DiffStats, params: [{name: dir, type: string}], results: [{type: snapshot.Changes}]}]}
+          - {name: MCPConfig, direction: out, version: 1, methods: [{name: Servers, params: [{name: projectDir, type: string}, {name: hostPID, type: int}], results: [{type: "[]snapshot.MCPServer"}]}]}
+          - {name: MCPCalls, direction: out, version: 1, methods: [{name: Busy, params: [{name: transcriptPath, type: string}, {name: sessionID, type: string}, {name: now, type: time.Time}], results: [{type: "[]string"}]}]}
+          - {name: WorkDir, direction: out, version: 1, methods: [{name: Dir, params: [{name: transcriptPath, type: string}, {name: fallback, type: string}], results: [{type: string}]}]}
+          - {name: SessionRegistry, direction: out, version: 1, methods: [{name: Lookup, params: [{name: sessionID, type: string}], results: [{type: state.HostSession}, {type: bool}]}]}
+          - {name: TaskStore, direction: out, version: 1, methods: [{name: Board, params: [{name: sessionID, type: string}, {name: listID, type: string}, {name: now, type: time.Time}], results: [{type: snapshot.TaskBoard}]}]}
+          - {name: SystemInfo, direction: out, version: 1, methods: [{name: Info, results: [{type: snapshot.System}]}]}
+          - {name: UsageAPI, direction: out, version: 1, description: "UsageAPIV1 fetches the quotas once; a 429 is a *state.RateLimited, anything else wraps state.ErrUsageUnavailable.", methods: [{name: Fetch, params: [{name: token, type: string}], results: [{type: quota.Set}]}]}
+          - {name: TokenStore, direction: out, version: 1, description: "TokenStoreV1 reads the OAuth token on every call: never cached, refreshed or sent anywhere but the usage API.", methods: [{name: Token, results: [{type: string}]}]}
+          - {name: StatusPage, direction: out, version: 1, methods: [{name: Fetch, results: [{type: int}]}]}
+          - {name: NetworkStore, direction: out, version: 1, methods: [{name: LoadNetwork, results: [{type: state.Network}]}, {name: SaveNetwork, params: [{name: n, type: state.Network}]}]}
+          - {name: SnapshotCache, direction: out, version: 1, methods: [{name: SaveSnapshot, params: [{name: key, type: ipc.Key}, {name: snap, type: snapshot.Snapshot}]}]}
+          - name: SessionCache
+            direction: out
+            version: 1
+            description: SessionCacheV1 keeps the snapshots by key, and when each key was last asked for.
+            methods:
+              - {name: Get, params: [{name: key, type: ipc.Key}, {name: now, type: time.Time}], results: [{type: snapshot.Snapshot}, {type: bool}]}
+              - {name: Put, params: [{name: key, type: ipc.Key}, {name: snap, type: snapshot.Snapshot}, {name: now, type: time.Time}]}
+              - {name: Touch, params: [{name: key, type: ipc.Key}, {name: now, type: time.Time}]}
+              - {name: Evict, params: [{name: now, type: time.Time}], results: [{type: int}]}
+              - {name: Len, results: [{type: int}]}
+              - {name: LastRequest, results: [{type: time.Time}]}
+          - {name: UpdateStore, direction: out, version: 1, methods: [{name: LoadUpdate, results: [{type: state.Update}]}, {name: SaveUpdate, params: [{name: u, type: state.Update}]}]}
+          - name: ReleaseSource
+            direction: out
+            version: 1
+            methods:
+              - {name: Latest, results: [{type: state.Release}]}
+              - {name: Install, params: [{name: rel, type: state.Release}]}
+              - {name: Probe}
+              - {name: Rollback}
+          - {name: Clock, direction: out, version: 1, methods: [{name: Now, results: [{type: time.Time}]}]}
+          - name: Command
+            direction: in
+            version: 1
+            description: CommandV1 is the daemon role's entry.
+            methods:
+              - {name: Run, params: [{name: args, type: "[]string"}]}
+          - name: Daemon
+            direction: in
+            version: 1
+            description: DaemonV1 is the contract statusline.ipc/v1 as the daemon answers it (D22).
+            methods:
+              - {name: Snapshot, params: [{name: key, type: ipc.Key}], results: [{type: snapshot.Snapshot}]}
+              - {name: Status, results: [{type: ipc.Status}]}
+              - {name: Stop}
+        usecases:
+          - name: CollectSnapshot
+            description: A snapshot younger than state.Freshness is served as is; otherwise every source is read — git where the session works, MCP in its own directory — kept and cached.
+            input: [{name: Key, type: ipc.Key}]
+            output: [{name: Snapshot, type: snapshot.Snapshot}, {name: Collected, type: bool}]
+            calls:
+              - collect/port/Clock@v1.Now
+              - collect/port/SessionCache@v1.Touch
+              - collect/port/SessionCache@v1.Get
+              - collect/port/WorkDir@v1.Dir
+              - collect/port/SessionRegistry@v1.Lookup
+              - collect/port/Repository@v1.Status
+              - collect/port/Repository@v1.DiffStats
+              - collect/port/SystemInfo@v1.Info
+              - collect/port/MCPCalls@v1.Busy
+              - collect/port/MCPConfig@v1.Servers
+              - collect/port/TaskStore@v1.Board
+              - collect/usecase/LatestNetwork
+              - collect/port/SessionCache@v1.Put
+              - collect/port/SnapshotCache@v1.SaveSnapshot
+            scenarios:
+              - {name: collects and caches a new key, kind: success}
+              - {name: serves a fresh snapshot without reading anything, kind: success}
+          - name: RefreshNetwork
+            description: Fetches what is due — the usage API at most once a UsageTTL and never before a Retry-After, the status page once a HealthTTL — and persists the bookkeeping after any attempt.
+            input: [{name: Force, type: bool}]
+            output: [{name: UsageFetched, type: bool}, {name: HealthFetched, type: bool}]
+            calls:
+              - collect/port/Clock@v1.Now
+              - collect/port/NetworkStore@v1.LoadNetwork
+              - collect/port/TokenStore@v1.Token
+              - collect/port/UsageAPI@v1.Fetch
+              - collect/port/StatusPage@v1.Fetch
+              - collect/port/NetworkStore@v1.SaveNetwork
+            scenarios:
+              - {name: fetches what is due, kind: success}
+              - {name: fetches nothing before its ttl, kind: success}
+              - {name: honours a retry after across a restart, kind: success}
+              - {name: keeps the last payload without a token, kind: success}
+          - name: LatestNetwork
+            description: The last figures; the health unknown past state.HealthMaxAge.
+            output: [{name: Usage, type: quota.Set}, {name: HasUsage, type: bool}, {name: Health, type: int}, {name: Network, type: state.Network}]
+            calls: [collect/port/Clock@v1.Now, collect/port/NetworkStore@v1.LoadNetwork]
+            scenarios:
+              - {name: serves the persisted figures, kind: success}
+              - {name: reads a stale summary as unknown, kind: success}
+          - name: CheckUpdate
+            description: Hourly, never elevated. A newer signed release is installed with <bin>.prev kept and probed; a failed probe rolls back and the version is never installed again.
+            input: [{name: CurrentVersion, type: string}, {name: Disabled, type: bool}]
+            output: [{name: Notice, type: snapshot.UpdateNotice}, {name: Installed, type: bool}]
+            calls:
+              - collect/port/Clock@v1.Now
+              - collect/port/UpdateStore@v1.LoadUpdate
+              - collect/port/ReleaseSource@v1.Latest
+              - collect/port/ReleaseSource@v1.Install
+              - collect/port/ReleaseSource@v1.Probe
+              - collect/port/ReleaseSource@v1.Rollback
+              - collect/port/UpdateStore@v1.SaveUpdate
+            scenarios:
+              - {name: installs and probes a newer release, kind: success}
+              - {name: asks nothing when disabled, kind: success}
+              - {name: never installs the bad version again, kind: success}
+              - {name: rolls back a release that fails its probe, kind: success}
+
+      - name: daemon
+        role: presentation
+        code: 64.3.3
+        uses: [collector, ipc, snapshot, state]
+        description: The daemon role's entry — the instance lock, the private socket that only accepts its own user, the contract's operations, the loops, the heartbeat, the stop once no session asked for a minute or after an update, a bounded log.
+        evidence: [one-binary-two-processes]
+        adapters:
+          - name: Listener
+            implements: [collect/port/Command@v1, collect/port/Daemon@v1]
+            uses:
+              - collect/usecase/CollectSnapshot
+              - collect/usecase/LatestNetwork
+              - collect/usecase/RefreshNetwork
+              - collect/usecase/CheckUpdate
+              - collect/port/SessionCache@v1
+              - collect/port/UpdateStore@v1
+              - collect/port/Clock@v1
+            calls:
+              - collect/usecase/CollectSnapshot
+              - collect/usecase/LatestNetwork
+              - collect/usecase/RefreshNetwork
+              - collect/usecase/CheckUpdate
+              - collect/port/SessionCache@v1.Evict
+              - collect/port/SessionCache@v1.Len
+              - collect/port/SessionCache@v1.LastRequest
+              - collect/port/UpdateStore@v1.LoadUpdate
+              - collect/port/Clock@v1.Now
+
+      - {name: gitcli, role: adapter, code: 64.3.4, uses: [collector, snapshot], adapters: [{name: Git, implements: [collect/port/Repository@v1]}]}
+      - {name: mcpconfig, role: adapter, code: 64.3.5, uses: [collector, snapshot], description: "The MCP servers from the managed file, the host's command line, the local, project and user scopes and the enabled plugins.", adapters: [{name: Config, implements: [collect/port/MCPConfig@v1]}]}
+      - {name: transcripts, role: adapter, code: 64.3.6, uses: [collector], description: "The ends of the transcripts: the MCP calls in flight, and where the session works.", adapters: [{name: Transcripts, implements: [collect/port/MCPCalls@v1, collect/port/WorkDir@v1]}]}
+      - {name: sessions, role: adapter, code: 64.3.7, uses: [collector, state], adapters: [{name: Sessions, implements: [collect/port/SessionRegistry@v1]}]}
+      - {name: taskstore, role: adapter, code: 64.3.8, uses: [collector, snapshot], adapters: [{name: Tasks, implements: [collect/port/TaskStore@v1]}]}
+      - {name: sysinfo, role: adapter, code: 64.3.9, uses: [collector, snapshot], adapters: [{name: System, implements: [collect/port/SystemInfo@v1]}]}
+      - {name: usageapi, role: adapter, code: 64.3.10, uses: [collector, quota, state], evidence: [usage-endpoint-shape, usage-legacy-buckets, usage-null-buckets], adapters: [{name: Usage, implements: [collect/port/UsageAPI@v1]}]}
+      - {name: credentials, role: adapter, code: 64.3.11, uses: [collector], adapters: [{name: Credentials, implements: [collect/port/TokenStore@v1]}]}
+      - {name: statuspage, role: adapter, code: 64.3.12, uses: [collector, snapshot], evidence: [status-page-summary-shape], adapters: [{name: StatusPage, implements: [collect/port/StatusPage@v1]}]}
+      - {name: statefile, role: adapter, code: 64.3.13, uses: [collector, snapshot, ipc, state], description: "The instance's state files: network and update bookkeeping, and every key's last snapshot for a cold client.", adapters: [{name: Files, implements: [collect/port/NetworkStore@v1, collect/port/SnapshotCache@v1, collect/port/UpdateStore@v1]}]}
+      - {name: sessioncache, role: adapter, code: 64.3.14, uses: [collector, snapshot, ipc, state], adapters: [{name: Cache, implements: [collect/port/SessionCache@v1]}]}
+      - {name: releases, role: adapter, code: 64.3.15, uses: [collector, state, ipc], description: "The SDK's signed self-update, with <bin>.prev kept, a probe and a rollback.", adapters: [{name: Releases, implements: [collect/port/ReleaseSource@v1]}]}
+      - {name: wallclock, role: adapter, code: 64.3.16, uses: [collector], adapters: [{name: Clock, implements: [collect/port/Clock@v1]}]}
+
+    sequences:
+      - name: refresh-network
+        description: A refresh tick with everything due.
+        start: collect/usecase/RefreshNetwork
+        steps:
+          - call: collect/port/NetworkStore@v1.LoadNetwork
+          - call: collect/port/TokenStore@v1.Token
+          - call: collect/port/UsageAPI@v1.Fetch
+          - call: collect/port/StatusPage@v1.Fetch
+          - call: collect/port/NetworkStore@v1.SaveNetwork
+      - name: self-update
+        description: An hourly check that finds a newer release.
+        start: collect/usecase/CheckUpdate
+        steps:
+          - call: collect/port/UpdateStore@v1.LoadUpdate
+          - call: collect/port/ReleaseSource@v1.Latest
+          - call: collect/port/ReleaseSource@v1.Install
+          - call: collect/port/ReleaseSource@v1.Probe
+          - call: collect/port/UpdateStore@v1.SaveUpdate
