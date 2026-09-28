@@ -13,7 +13,7 @@
   },
   "credentials": true,
   "scope": "legacy-only",
-  "note": "the new daemon never stores an undecodable payload; decoding refusal is checked by the collect usage unit test",
+  "note": "the daemon never stores an undecodable payload; pinned by collect/usageapi TestFetchRefusals",
   "usage": [
     "not",
     "an",

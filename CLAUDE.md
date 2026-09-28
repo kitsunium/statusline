@@ -9,27 +9,40 @@ the only link.
 
 `design/` is law on the structure (ADR 0010 of platform): components,
 exported types and functions, use cases, ports, which component imports
-which, the wiring of each process role. Bodies are free. Until `kit gen` is
-published, the files that stand for generated code are named `api.go`
-(exported shells delegating to an unexported twin), `port/port.go` and
-`roles/*/wire.go`; they are replaced by `*_gen.go` at the first generation.
-Anything a component keeps to itself lives in unexported code or in its
-`internal/` zone (the renderer: `render/powerline/internal/`).
+which, the links each body makes, the wiring of each process role. Bodies
+are free. `kit gen` (platform, pinned in CI by `vars.KIT_REF`) writes
+`*_gen.go` / `*_gen_test.go` — never edit them — and, once, the skeleton of
+each hand-written twin in `<name>.go`. Twins live in those files: `kit gen`
+recreates a missing one even when the twin sits elsewhere. `kit gen -check`
+and `lourd kit check` must stay green; `closed: true` with no exceptions.
+
+- Every implemented method or function carries a named property
+  (`properties:` in the design, `property<Type><Method><Name>` in
+  `properties_test.go` or `more_properties_test.go`, with rapid).
+- Every scenario is a `given<UseCase><Scenario>` in
+  `<usecase>_scenarios_test.go`; every sequence a `givenSequence<Name>`.
+- design/v1 has no named non-struct types: enumerations are plain
+  `string`/`int` constants, `[]snapshot.MCPServer` has functions
+  (`WithSource`, `WithBusy`), not methods.
+- Adapters take only what the design's `uses` gives their constructor;
+  configuration (instance paths, endpoints, version) is read in the body.
+- Anything a component keeps to itself lives in unexported code or its
+  `internal/` zone (the renderer: `render/powerline/internal/`).
 
 ## Layout
 
 ```
-design/            product, domains (quota, snapshot, ipc, render, collect),
-                   sequences, evidence (observed fixtures), all design/v1
-cmd/statusline     one executable: `statusline` = client, `statusline daemon`
-roles/{client,daemon}   wiring of each process role (D22)
+design/            product.yaml (binary, roles, contract, evidence),
+                   status.yaml (quota, snapshot, ipc libraries),
+                   render.yaml (client), collect.yaml (daemon)
+cmd/statusline     main_gen.go + client/ and daemon/ wiring (generated, D22)
 quota/ snapshot/ ipc/   libraries shared by both roles; ipc = the contract
-render/            client: session (stdin), powerline (renderer), show,
-                   ctl, cli, daemonlink, systemclock, port
-collect/           daemon: state, gather, refresh, update, daemon, and the
-                   adapters gitcli, mcpconfig, transcripts, sessions,
-                   taskstore, sysinfo, usageapi, credentials, statuspage,
-                   statefile, releases, systemclock, port
+render/            session, powerline, show (use cases + ports), cli,
+                   daemonlink, systemclock
+collect/           state, collector (use cases + ports), daemon (Listener:
+                   entry + contract), gitcli, mcpconfig, transcripts,
+                   sessions, taskstore, sysinfo, usageapi, credentials,
+                   statuspage, statefile, sessioncache, releases, wallclock
 testdata/parity    legacy goldens, scenarios, latency, harness (own module)
 docs/adr           decisions the design's evidence points to
 ```
@@ -51,13 +64,15 @@ docs/adr           decisions the design's evidence points to
 - `STATUSLINE_USAGE_URL` / `STATUSLINE_HEALTH_URL` point the daemon at other
   endpoints (the parity harness serves synthetic payloads through them).
 - `STATUSLINE_NO_SELF_UPDATE` (or the legacy `STATUS_LINE_NO_SELF_UPDATE`)
-  switches the self-update off; a build without `-X main.vendorKey` installs
-  nothing.
+  switches the self-update off. A release sets
+  `-X github.com/kitsunium/statusline/ipc.version=` and
+  `-X github.com/kitsunium/statusline/collect/releases.vendorKey=`
+  (`make build VERSION=… VENDOR_KEY=…`); without a key nothing is installed.
 
 ## Working here
 
 - Every go build/test/vet through `~/.local/bin/lourd`.
-- `make test` (race), `make parity` (88 black-box goldens must pass),
-  `make latency`.
+- `make test` (race), `make design` (kit gen -check, kit check),
+  `make parity` (88 black-box goldens must pass), `make latency`.
 - Test data is synthetic only: the repository is public.
 - Commits: conventional, author Kodflow, no AI attribution (post-commit gate).

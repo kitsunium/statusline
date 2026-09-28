@@ -18,7 +18,7 @@
     }
   },
   "scope": "legacy-only",
-  "note": "the new daemon refuses to keep an undecodable summary, as the legacy refresh did; checked by the collect health unit test",
+  "note": "the daemon never stores an undecodable summary; pinned by collect/statuspage TestClassify",
   "health": {
     "components": "nope"
   },

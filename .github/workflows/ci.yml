@@ -79,17 +79,26 @@ jobs:
           "$RUNNER_TEMP/harness" latency -bin "$RUNNER_TEMP/statusline" -flavour kit -cold -runs 100 -scenario busy/default
 
   design:
-    # kit check (platform) against design/: runs once the platform pull
-    # request publishes `kit`; KIT_REF is the commit it is installed from.
+    # kit gen -check and kit check against design/. kitsunium/platform is
+    # private: the job runs once the repository variable KIT_REF (a platform
+    # commit) and the secret KIT_READ_TOKEN (read access to it) are set.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     if: ${{ vars.KIT_REF != '' }}
+    env:
+      GOPRIVATE: github.com/kitsunium/*
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version-file: go.mod
       - name: install kit
-        run: go install "github.com/kitsunium/platform/cmd/kit@${{ vars.KIT_REF }}"
+        env:
+          KIT_READ_TOKEN: ${{ secrets.KIT_READ_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${KIT_READ_TOKEN}@github.com/kitsunium/".insteadOf "https://github.com/kitsunium/"
+          go install "github.com/kitsunium/platform/cmd/kit@${{ vars.KIT_REF }}"
+      - name: the generated files are the design's
+        run: kit gen -check
       - name: kit check
         run: kit check

@@ -18,7 +18,7 @@
     }
   },
   "scope": "legacy-only",
-  "note": "the age of a fetched summary is internal state of the daemon; checked by the collect health unit test (stale summary => unknown)",
+  "note": "the age of a fetched summary is daemon state; pinned by collect/state TestHealthAges and propertyNetworkCurrentHealthUnknownPastMaxAge",
   "health": {
     "components": [
       {
