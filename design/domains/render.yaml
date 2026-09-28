@@ -49,6 +49,9 @@ spec:
       package: render/systemclock
       implements: [render/port/clock@v1]
 
+  # Port interfaces are generated whole into one package per domain; an
+  # adapter asserts it implements them, a use case holds them.
+  portsPackage: render/port
   ports:
     - id: render/port/snapshot-source@v1
       direction: outbound
@@ -84,6 +87,8 @@ spec:
         - {name: Cost, type: PayloadCost, tag: 'json:"cost"'}
         - {name: RateLimits, type: PayloadRateLimits, tag: 'json:"rate_limits"'}
         - {name: Effort, type: PayloadEffort, tag: 'json:"effort"'}
+        - {name: Thinking, type: PayloadThinking, tag: 'json:"thinking"'}
+        - {name: OutputStyle, type: PayloadStyle, tag: 'json:"output_style"'}
         - {name: SessionName, type: string, tag: 'json:"session_name"'}
         - {name: Transcript, type: string, tag: 'json:"transcript_path"'}
         - {name: SessionID, type: string, tag: 'json:"session_id"'}
@@ -103,12 +108,18 @@ spec:
     - id: render/vo/payload-context
       component: render/component/session
       name: PayloadContext
+      description: Every field the host sends is declared with its type, so a payload with a mistyped field is refused whole, as the legacy product did.
       fields:
+        - {name: CurrentUsage, type: PayloadUsage, tag: 'json:"current_usage"'}
         - {name: TotalInputTokens, type: int, tag: 'json:"total_input_tokens"'}
         - {name: TotalOutputTokens, type: int, tag: 'json:"total_output_tokens"'}
         - {name: ContextWindowSize, type: int, tag: 'json:"context_window_size"'}
         - {name: UsedPercentage, type: "*float64", tag: 'json:"used_percentage"'}
-    - {id: render/vo/payload-cost, component: render/component/session, name: PayloadCost, fields: [{name: TotalCostUSD, type: float64, tag: 'json:"total_cost_usd"'}, {name: TotalLinesAdded, type: int, tag: 'json:"total_lines_added"'}, {name: TotalLinesRemoved, type: int, tag: 'json:"total_lines_removed"'}]}
+        - {name: RemainingPercentage, type: "*float64", tag: 'json:"remaining_percentage"'}
+    - {id: render/vo/payload-usage, component: render/component/session, name: PayloadUsage, fields: [{name: InputTokens, type: int, tag: 'json:"input_tokens"'}, {name: OutputTokens, type: int, tag: 'json:"output_tokens"'}, {name: CacheCreationInputTokens, type: int, tag: 'json:"cache_creation_input_tokens"'}, {name: CacheReadInputTokens, type: int, tag: 'json:"cache_read_input_tokens"'}]}
+    - {id: render/vo/payload-thinking, component: render/component/session, name: PayloadThinking, fields: [{name: Enabled, type: bool, tag: 'json:"enabled"'}]}
+    - {id: render/vo/payload-style, component: render/component/session, name: PayloadStyle, fields: [{name: Name, type: string, tag: 'json:"name"'}]}
+    - {id: render/vo/payload-cost, component: render/component/session, name: PayloadCost, fields: [{name: TotalCostUSD, type: float64, tag: 'json:"total_cost_usd"'}, {name: TotalDurationMs, type: int64, tag: 'json:"total_duration_ms"'}, {name: TotalAPIDurationMs, type: int64, tag: 'json:"total_api_duration_ms"'}, {name: TotalLinesAdded, type: int, tag: 'json:"total_lines_added"'}, {name: TotalLinesRemoved, type: int, tag: 'json:"total_lines_removed"'}]}
     - {id: render/vo/payload-rate-limits, component: render/component/session, name: PayloadRateLimits, fields: [{name: FiveHour, type: "*PayloadRateLimit", tag: 'json:"five_hour"'}, {name: SevenDay, type: "*PayloadRateLimit", tag: 'json:"seven_day"'}]}
     - id: render/vo/payload-rate-limit
       component: render/component/session

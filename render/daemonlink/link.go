@@ -1,0 +1,154 @@
+package daemonlink
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net"
+	"os"
+	"os/exec"
+	"time"
+
+	"github.com/kitsunium/statusline/ipc"
+	"github.com/kitsunium/statusline/render/port"
+	"github.com/kitsunium/statusline/snapshot"
+)
+
+// defaultBudget bounds one exchange: a warm daemon answers in about a
+// millisecond; one collecting a new key takes what the legacy client took.
+const defaultBudget time.Duration = 250 * time.Millisecond
+
+// Why a daemon was not used.
+var (
+	errOlder = errors.New("daemon is older than this client")
+	errNewer = errors.New("daemon speaks a newer, incompatible protocol")
+	errEmpty = errors.New("daemon answered without a snapshot")
+)
+
+func newLink(cfg Config) *Link {
+	if cfg.Budget <= 0 {
+		cfg.Budget = defaultBudget
+	}
+	return &Link{cfg: cfg}
+}
+
+// snapshot starts a daemon whenever the answer did not come from a
+// compatible one of this version or newer; the line is then drawn from the
+// key's cache, written by the daemon after each collection.
+func (l *Link) snapshot(ctx context.Context, key ipc.Key) (snapshot.Snapshot, port.SnapshotOrigin) {
+	resp, err := l.exchange(ctx, ipc.Request{Op: ipc.OpSnapshot, Key: key}, true)
+	if err == nil && resp.Snapshot != nil {
+		return *resp.Snapshot, port.OriginDaemon
+	}
+	// Start one only where none answers or an older one was just stopped: a
+	// slow or newer daemon is left alone, it is the one that stays
+	if errors.Is(err, errOlder) || isDialError(err) {
+		l.start()
+	}
+	if snap, ok := l.readCache(key); ok {
+		return snap, port.OriginCache
+	}
+	return snapshot.Snapshot{}, port.OriginNone
+}
+
+func (l *Link) status(ctx context.Context) (ipc.Status, error) {
+	resp, err := l.exchange(ctx, ipc.Request{Op: ipc.OpStatus}, false)
+	if err != nil {
+		return ipc.Status{}, err
+	}
+	if resp.Status == nil {
+		return ipc.Status{}, fmt.Errorf("daemon: %s", resp.Error)
+	}
+	return *resp.Status, nil
+}
+
+func (l *Link) stop(ctx context.Context) error {
+	_, err := l.exchange(ctx, ipc.Request{Op: ipc.OpStop}, false)
+	return err
+}
+
+// exchange dials, shakes hands and sends one request. With replaceOlder set,
+// an older daemon is asked to stop on the same connection instead.
+func (l *Link) exchange(ctx context.Context, req ipc.Request, replaceOlder bool) (ipc.Response, error) {
+	ctx, cancel := context.WithTimeout(ctx, l.cfg.Budget)
+	defer cancel()
+	var dialer net.Dialer
+	conn, err := dialer.DialContext(ctx, "unix", l.cfg.Instance.Socket)
+	if err != nil {
+		return ipc.Response{}, err
+	}
+	defer func() { _ = conn.Close() }()
+	if deadline, ok := ctx.Deadline(); ok {
+		_ = conn.SetDeadline(deadline)
+	}
+	if err := ipc.WriteFrame(conn, ipc.Hello{Protocol: ipc.Protocol, Version: l.cfg.Version, PID: os.Getpid()}); err != nil {
+		return ipc.Response{}, err
+	}
+	var hello ipc.Hello
+	if err := ipc.ReadFrame(conn, &hello); err != nil {
+		return ipc.Response{}, err
+	}
+	older := ipc.CompareVersions(hello.Version, l.cfg.Version) < 0
+	switch {
+	case older && replaceOlder:
+		// The daemon stops after answering; the caller starts this version
+		_ = ipc.WriteFrame(conn, ipc.Request{Op: ipc.OpStop})
+		var ack ipc.Response
+		_ = ipc.ReadFrame(conn, &ack)
+		return ipc.Response{}, errOlder
+	case !ipc.Compatible(hello.Protocol) && older:
+		return ipc.Response{}, errOlder
+	case !ipc.Compatible(hello.Protocol):
+		return ipc.Response{}, errNewer
+	}
+	if err := ipc.WriteFrame(conn, req); err != nil {
+		return ipc.Response{}, err
+	}
+	var resp ipc.Response
+	if err := ipc.ReadFrame(conn, &resp); err != nil {
+		return ipc.Response{}, err
+	}
+	if req.Op == ipc.OpSnapshot && resp.Snapshot == nil {
+		return resp, errEmpty
+	}
+	return resp, nil
+}
+
+// readCache reads the key's last snapshot; a missing or torn file is a
+// miss.
+func (l *Link) readCache(key ipc.Key) (snapshot.Snapshot, bool) {
+	data, err := os.ReadFile(l.cfg.Instance.CachePath(key))
+	if err != nil {
+		return snapshot.Snapshot{}, false
+	}
+	var snap snapshot.Snapshot
+	if json.Unmarshal(data, &snap) != nil {
+		return snapshot.Snapshot{}, false
+	}
+	return snap, true
+}
+
+// start launches `<this executable> daemon`, detached so that it outlives
+// this process; a daemon already holding the instance makes it leave at
+// once, so a racing start costs one short-lived process.
+func (l *Link) start() {
+	exe := l.cfg.Executable
+	if exe == "" {
+		return
+	}
+	cmd := exec.Command(exe, "daemon")
+	cmd.Env = os.Environ()
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = nil, nil, nil
+	cmd.SysProcAttr = detached()
+	if err := cmd.Start(); err != nil {
+		return
+	}
+	_ = cmd.Process.Release()
+}
+
+// isDialError reports that no daemon listens: no socket, or a dead one.
+func isDialError(err error) bool {
+	var op *net.OpError
+	return errors.As(err, &op) && op.Op == "dial"
+}
