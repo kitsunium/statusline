@@ -22,19 +22,31 @@ spec:
       uses: [quota/component/quota, snapshot/component/snapshot, render/component/session]
       evidence: [condense-policy-decision, palette-contrast-decision]
     - id: render/component/show
+      type: "Shower"
+      constructor: "New(deps Deps) *Shower"
+      deps: "Deps{Clock port.Clock; Snapshots port.SnapshotSource}"
       role: application
       package: render/show
       uses: [quota/component/quota, snapshot/component/snapshot, ipc/component/ipc, render/component/session, render/component/powerline]
     - id: render/component/ctl
+      type: "Status, Stop"
+      constructor: "NewStatus(deps Deps) *Status; NewStop(deps Deps) *Stop"
+      deps: "Deps{Daemon port.DaemonControl}"
       role: application
       package: render/ctl
       uses: [ipc/component/ipc]
     - id: render/component/cli
+      type: "CLI"
+      constructor: "New(deps Deps) *CLI"
+      deps: "Deps{Show show.ShowStatusLine; Status ctl.DaemonStatus; Stop ctl.StopDaemon}"
       role: presentation
       package: render/cli
       description: The client role's entry. argv → use case; stdin and stdout; never exits non-zero on a bad payload.
       uses: [render/component/show, render/component/ctl]
     - id: render/component/daemonlink
+      type: "Link"
+      constructor: "New(cfg Config) *Link"
+      deps: "Config{Instance ipc.Instance; Version string; Executable string; Budget time.Duration}"
       role: adapter
       package: render/daemonlink
       description: >-
@@ -45,6 +57,8 @@ spec:
       uses: [ipc/component/ipc, snapshot/component/snapshot]
       implements: [render/port/snapshot-source@v1, render/port/daemon-control@v1]
     - id: render/component/systemclock
+      type: "Clock"
+      constructor: "New() *Clock"
       role: adapter
       package: render/systemclock
       implements: [render/port/clock@v1]
@@ -72,6 +86,7 @@ spec:
 
   valueObjects:
     - id: render/vo/snapshot-origin
+      package: render/port
       name: SnapshotOrigin
       underlying: string
       values: {OriginDaemon: daemon, OriginCache: cache, OriginNone: none}

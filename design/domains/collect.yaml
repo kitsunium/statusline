@@ -13,18 +13,30 @@ spec:
       description: The daemon's state — sessions by key with their eviction, network bookkeeping with the 429 back-off, update bookkeeping with the bad version.
       uses: [quota/component/quota, snapshot/component/snapshot, ipc/component/ipc]
     - id: collect/component/gather
+      type: "Collector"
+      constructor: "New(deps Deps) *Collector"
+      deps: "Deps{Clock; WorkDir; Sessions; Repository; MCPConfig; MCPCalls; Tasks; System; Cache; Network refresh.LatestNetwork; Registry *state.Registry}"
       role: application
       package: collect/gather
       uses: [quota/component/quota, snapshot/component/snapshot, ipc/component/ipc, collect/component/state, collect/component/refresh]
     - id: collect/component/refresh
+      type: "Refresher"
+      constructor: "New(deps Deps) *Refresher; (*Refresher).Latest() LatestNetwork"
+      deps: "Deps{Clock; Store port.NetworkStore; Tokens port.TokenStore; Usage port.UsageAPI; Status port.StatusPage}"
       role: application
       package: collect/refresh
       uses: [quota/component/quota, snapshot/component/snapshot, collect/component/state]
     - id: collect/component/update
+      type: "Updater"
+      constructor: "New(deps Deps) *Updater"
+      deps: "Deps{Clock; Store port.UpdateStore; Releases port.ReleaseSource}"
       role: application
       package: collect/update
       uses: [snapshot/component/snapshot, ipc/component/ipc, collect/component/state]
     - id: collect/component/daemon
+      type: "Daemon"
+      constructor: "New(deps Deps) *Daemon"
+      deps: "Deps{Clock; Registry *state.Registry; Collect gather.CollectSnapshot; Refresh refresh.RefreshNetwork; Latest refresh.LatestNetwork; Update update.CheckUpdate; Updates port.UpdateStore}"
       role: presentation
       package: collect/daemon
       description: >-
@@ -33,18 +45,18 @@ spec:
         (refresh every second, eviction, update check hourly), the stop ~60 s
         after the last request, a bounded log.
       uses: [ipc/component/ipc, snapshot/component/snapshot, collect/component/state, collect/component/gather, collect/component/refresh, collect/component/update]
-    - {id: collect/component/gitcli, role: adapter, package: collect/gitcli, uses: [snapshot/component/snapshot], implements: [collect/port/repository@v1]}
-    - {id: collect/component/mcpconfig, role: adapter, package: collect/mcpconfig, uses: [snapshot/component/snapshot], implements: [collect/port/mcp-config@v1]}
-    - {id: collect/component/transcripts, role: adapter, package: collect/transcripts, uses: [], implements: [collect/port/mcp-calls@v1, collect/port/workdir@v1]}
-    - {id: collect/component/sessions, role: adapter, package: collect/sessions, uses: [collect/component/state], implements: [collect/port/session-registry@v1]}
-    - {id: collect/component/taskstore, role: adapter, package: collect/taskstore, uses: [snapshot/component/snapshot], implements: [collect/port/task-store@v1]}
-    - {id: collect/component/sysinfo, role: adapter, package: collect/sysinfo, uses: [snapshot/component/snapshot], implements: [collect/port/system-info@v1]}
-    - {id: collect/component/usageapi, role: adapter, package: collect/usageapi, uses: [quota/component/quota, collect/component/state], implements: [collect/port/usage-api@v1], evidence: [usage-endpoint-shape]}
-    - {id: collect/component/credentials, role: adapter, package: collect/credentials, uses: [], implements: [collect/port/token-store@v1]}
-    - {id: collect/component/statuspage, role: adapter, package: collect/statuspage, uses: [snapshot/component/snapshot], implements: [collect/port/status-page@v1], evidence: [status-page-summary-shape]}
-    - {id: collect/component/statefile, role: adapter, package: collect/statefile, uses: [snapshot/component/snapshot, ipc/component/ipc, collect/component/state], implements: [collect/port/network-store@v1, collect/port/snapshot-cache@v1, collect/port/update-store@v1]}
-    - {id: collect/component/releases, role: adapter, package: collect/releases, uses: [collect/component/state], implements: [collect/port/release-source@v1]}
-    - {id: collect/component/systemclock, role: adapter, package: collect/systemclock, uses: [], implements: [collect/port/clock@v1]}
+    - {id: collect/component/gitcli, role: adapter, package: collect/gitcli, uses: [snapshot/component/snapshot], implements: [collect/port/repository@v1], type: "Repository", constructor: "New() *Repository"}
+    - {id: collect/component/mcpconfig, role: adapter, package: collect/mcpconfig, uses: [snapshot/component/snapshot], implements: [collect/port/mcp-config@v1], type: "Reader", constructor: "New() *Reader"}
+    - {id: collect/component/transcripts, role: adapter, package: collect/transcripts, uses: [], implements: [collect/port/mcp-calls@v1, collect/port/workdir@v1], type: "Reader", constructor: "New() *Reader"}
+    - {id: collect/component/sessions, role: adapter, package: collect/sessions, uses: [collect/component/state], implements: [collect/port/session-registry@v1], type: "Registry", constructor: "New() *Registry"}
+    - {id: collect/component/taskstore, role: adapter, package: collect/taskstore, uses: [snapshot/component/snapshot], implements: [collect/port/task-store@v1], type: "Store", constructor: "New() *Store"}
+    - {id: collect/component/sysinfo, role: adapter, package: collect/sysinfo, uses: [snapshot/component/snapshot], implements: [collect/port/system-info@v1], type: "Reader", constructor: "New() *Reader"}
+    - {id: collect/component/usageapi, role: adapter, package: collect/usageapi, uses: [quota/component/quota, collect/component/state], implements: [collect/port/usage-api@v1], evidence: [usage-endpoint-shape], type: "Client", constructor: "New(getenv func(string) string) *Client"}
+    - {id: collect/component/credentials, role: adapter, package: collect/credentials, uses: [], implements: [collect/port/token-store@v1], type: "Store", constructor: "New(getenv func(string) string) *Store"}
+    - {id: collect/component/statuspage, role: adapter, package: collect/statuspage, uses: [snapshot/component/snapshot], implements: [collect/port/status-page@v1], evidence: [status-page-summary-shape], type: "Client", constructor: "New(getenv func(string) string) *Client"}
+    - {id: collect/component/statefile, role: adapter, package: collect/statefile, uses: [snapshot/component/snapshot, ipc/component/ipc, collect/component/state], implements: [collect/port/network-store@v1, collect/port/snapshot-cache@v1, collect/port/update-store@v1], type: "Store", constructor: "New(instance ipc.Instance) *Store"}
+    - {id: collect/component/releases, role: adapter, package: collect/releases, uses: [collect/component/state], implements: [collect/port/release-source@v1], type: "Source", constructor: "New(cfg Config) *Source", deps: "Config{Version string; Executable string; VendorKey []byte}"}
+    - {id: collect/component/systemclock, role: adapter, package: collect/systemclock, uses: [], implements: [collect/port/clock@v1], type: "Clock", constructor: "New() *Clock"}
 
   # Port interfaces are generated whole into one package per domain; an
   # adapter asserts it implements them, a use case holds them.
