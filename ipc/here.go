@@ -1,32 +1,20 @@
 package ipc
 
 import (
-	"os"
-	"path/filepath"
+	"github.com/kitsunium/sdk/framework/kit"
+	sdkipc "github.com/kitsunium/sdk/pkg/v1/ipc"
 )
 
-// here resolves symbolic links so that a client started through a link and
-// the daemon it starts agree on the executable, hence on the instance.
+// daemonApp is the framework app the daemon role runs: its runtime
+// directory holds the instances' sockets.
+const daemonApp string = "daemon"
+
+// here computes the key the daemon's singleton and socket take, from the
+// same scopes (design/product.yaml, collect.yaml), in this process.
 func here() (Instance, error) {
-	getenv := os.Getenv
-	exe, err := os.Executable()
+	key, err := kit.ScopeKey(kit.PerUID, kit.PerExecutable, kit.PerEnv("CLAUDE_CONFIG_DIR", "~/.claude"))
 	if err != nil {
 		return Instance{}, err
 	}
-	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
-		exe = resolved
-	}
-	configDir := getenv("CLAUDE_CONFIG_DIR")
-	if configDir == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return Instance{}, err
-		}
-		configDir = filepath.Join(home, ".claude")
-	}
-	runtimeDir := getenv("XDG_RUNTIME_DIR")
-	if runtimeDir == "" {
-		runtimeDir = os.TempDir()
-	}
-	return locate(LocateInput{RuntimeDir: runtimeDir, UID: os.Getuid(), ConfigDir: configDir, Executable: exe}), nil
+	return locate(LocateInput{RuntimeDir: sdkipc.RuntimeDir(daemonApp), Key: key}), nil
 }

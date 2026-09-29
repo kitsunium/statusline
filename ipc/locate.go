@@ -4,23 +4,19 @@
 
 package ipc
 
-import (
-	"encoding/hex"
-	"path/filepath"
-	"strconv"
-)
+import "path/filepath"
 
-// locate puts the instance under a private per-user directory; the
-// instance's own directory is named after the digest of what identifies
-// it, so two binaries at two paths, or two configuration directories,
-// never share a daemon.
+// daemonSocketPrefix is the framework's name for the daemon's listener:
+// <service>-<listener>-<key>.sock, service and listener both "daemon".
+const daemonSocketPrefix string = "daemon-daemon-"
+
+// locate places the socket where the framework's listener puts it and the
+// instance's own files beside it, in a directory named after the same key.
 func locate(in LocateInput) Instance {
-	sum := digest(in.ConfigDir, in.Executable)
-	dir := filepath.Join(in.RuntimeDir, "statusline-"+strconv.Itoa(in.UID), hex.EncodeToString(sum[:8]))
+	dir := filepath.Join(in.RuntimeDir, "statusline-"+in.Key)
 	return Instance{
 		Dir:       dir,
-		Socket:    filepath.Join(dir, "daemon.sock"),
-		Lock:      filepath.Join(dir, "daemon.lock"),
+		Socket:    filepath.Join(in.RuntimeDir, daemonSocketPrefix+in.Key+".sock"),
 		Cache:     filepath.Join(dir, "cache"),
 		State:     filepath.Join(dir, "state"),
 		Log:       filepath.Join(dir, "daemon.log"),

@@ -53,14 +53,9 @@ func propertyKeyHashStable(t *testing.T, seed uint64) {
 func propertyLocateDistinct(t *testing.T, seed uint64) {
 	t.Logf("design seed %d (rapid v1.2 takes its own seed from -rapid.seed)", seed)
 	rapid.Check(t, func(t *rapid.T) {
-		in := LocateInput{RuntimeDir: "/run/user/1000", UID: 1000,
-			ConfigDir: rapid.String().Draw(t, "cfg"), Executable: rapid.String().Draw(t, "exe")}
+		in := LocateInput{RuntimeDir: "/run/user/1000/daemon", Key: rapid.StringMatching(`[0-9a-f]{8,16}`).Draw(t, "key")}
 		other := in
-		if rapid.Bool().Draw(t, "which") {
-			other.ConfigDir += rapid.StringN(1, 4, -1).Draw(t, "more")
-		} else {
-			other.Executable += rapid.StringN(1, 4, -1).Draw(t, "more")
-		}
+		other.Key += rapid.StringMatching(`[0-9a-f]{1,4}`).Draw(t, "more")
 		if Locate(in).Socket == Locate(other).Socket {
 			t.Fatal("two instances share a socket")
 		}

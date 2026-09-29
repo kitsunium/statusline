@@ -69,10 +69,14 @@ binaries:
     roles:
       - name: client
         description: What the host runs on every redraw.
-        entry: render/adapter/CLI
+        profile: cli
+        mounts: [cli]
       - name: daemon
         command: daemon
-        description: One per (UID, host configuration directory, executable), started by a client, stopped a minute after the last redraw.
-        entry: collect/adapter/Listener
+        description: One per (UID, host configuration directory, executable), started by a client, stopped a minute after its last session.
+        profile: daemon
+        mounts: [daemon]
+        idleStop: 60s
+        singletonPer: [uid, executable, "env:CLAUDE_CONFIG_DIR|~/.claude"]
     contracts:
       - {from: client, to: daemon, port: collect/port/Daemon@v1}

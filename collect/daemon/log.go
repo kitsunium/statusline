@@ -26,7 +26,9 @@ type boundedLog struct {
 // openLog never fails: without a log the daemon still serves.
 func openLog(path string) *boundedLog {
 	l := &boundedLog{path: path}
-	l.open()
+	if path != "" {
+		l.open()
+	}
 	return l
 }
 

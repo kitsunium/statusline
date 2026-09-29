@@ -93,7 +93,7 @@ func setup(t *testing.T) (ipc.Instance, string, string) {
 	if err := os.WriteFile(exe, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	inst := ipc.Locate(ipc.LocateInput{RuntimeDir: dir, UID: os.Getuid(), ConfigDir: "/c", Executable: exe})
+	inst := ipc.Locate(ipc.LocateInput{RuntimeDir: dir, Key: "0123abcd"})
 	return inst, exe, marker
 }
 

@@ -145,12 +145,6 @@ domains:
             version: 1
             methods:
               - {name: Now, results: [{type: time.Time}]}
-          - name: Command
-            direction: in
-            version: 1
-            description: CommandV1 is the client role's entry.
-            methods:
-              - {name: Run, params: [{name: args, type: "[]string"}]}
         usecases:
           - name: ShowStatusLine
             description: The host's payload keyed as the daemon keeps it, the snapshot drawn at the clock's instant, stdin's quotas winning.
@@ -170,10 +164,13 @@ domains:
         role: presentation
         code: 64.2.4
         uses: [show, ipc]
-        description: The client role's entry — never a non-zero exit on a bad payload, since this process is the host's prompt line.
-        adapters:
-          - name: CLI
-            implements: [render/port/Command@v1]
+        description: "The client role's command, the default and fail-safe one: this process is the host's prompt line, it never fails and never writes a word of its own on stderr."
+        clis:
+          - name: line
+            doc: prints the two lines of the status line
+            handler: Line
+            default: true
+            failSafe: true
             uses: [render/usecase/ShowStatusLine, "build:version"]
             calls: [render/usecase/ShowStatusLine]
 

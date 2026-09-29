@@ -15,7 +15,7 @@ import (
 var ctx = context.Background()
 
 func TestRoundTrips(t *testing.T) {
-	inst := ipc.Locate(ipc.LocateInput{RuntimeDir: t.TempDir(), UID: 1000, ConfigDir: "/c", Executable: "/e"})
+	inst := ipc.Locate(ipc.LocateInput{RuntimeDir: t.TempDir(), Key: "0123abcd"})
 	s := newFilesAt(inst)
 
 	n, err := s.LoadNetwork(ctx)
@@ -60,7 +60,7 @@ func TestRoundTrips(t *testing.T) {
 }
 
 func TestCorruptStateIsAnError(t *testing.T) {
-	inst := ipc.Locate(ipc.LocateInput{RuntimeDir: t.TempDir(), UID: 1000, ConfigDir: "/c", Executable: "/e"})
+	inst := ipc.Locate(ipc.LocateInput{RuntimeDir: t.TempDir(), Key: "0123abcd"})
 	if err := os.MkdirAll(inst.State, 0o700); err != nil {
 		t.Fatal(err)
 	}

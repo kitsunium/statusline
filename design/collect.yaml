@@ -97,12 +97,6 @@ domains:
               - {name: Latest, results: [{type: state.Release}]}
               - {name: Install, params: [{name: rel, type: state.Release}]}
           - {name: Clock, direction: out, version: 1, methods: [{name: Now, results: [{type: time.Time}]}]}
-          - name: Command
-            direction: in
-            version: 1
-            description: CommandV1 is the daemon role's entry.
-            methods:
-              - {name: Run, params: [{name: args, type: "[]string"}]}
           - name: Daemon
             direction: in
             version: 1
@@ -177,30 +171,35 @@ domains:
         role: presentation
         code: 64.3.3
         uses: [collector, ipc, snapshot, state]
-        description: The daemon role's entry — `statusline daemon` serves; `statusline daemon status|stop` asks the instance's daemon through the contract and prints. The instance lock, the private socket that only accepts its own user, the contract's operations, the loops, the heartbeat, the stop once no session asked for a minute or after an update, a bounded log.
+        description: The daemon role on the framework — the listener of the contract, the jobs, the measure of sessions for the idle stop, and `statusline daemon status|stop`, which ask the instance's daemon through the contract. The instance lock, the private socket that only accepts its own user, the contract's operations, the loops, the heartbeat, the stop once no session asked for a minute or after an update, a bounded log.
         evidence: [one-binary-two-processes]
-        adapters:
-          - name: Listener
-            implements: [collect/port/Command@v1, collect/port/Daemon@v1]
-            uses:
-              - collect/usecase/CollectSnapshot
-              - collect/usecase/LatestNetwork
-              - collect/usecase/RefreshNetwork
-              - collect/usecase/CheckUpdate
-              - collect/port/SessionCache@v1
-              - collect/port/UpdateStore@v1
-              - collect/port/Clock@v1
-              - "build:version"
-            calls:
-              - collect/usecase/CollectSnapshot
-              - collect/usecase/LatestNetwork
-              - collect/usecase/RefreshNetwork
-              - collect/usecase/CheckUpdate
-              - collect/port/SessionCache@v1.Evict
-              - collect/port/SessionCache@v1.Len
-              - collect/port/SessionCache@v1.LastRequest
-              - collect/port/UpdateStore@v1.LoadUpdate
-              - collect/port/Clock@v1.Now
+        listeners:
+          - name: daemon
+            contract: daemon/v1
+            handler: Serve
+            socketPer: [uid, executable, "env:CLAUDE_CONFIG_DIR|~/.claude"]
+            uses: [collect/usecase/CollectSnapshot, collect/usecase/LatestNetwork, collect/port/SessionCache@v1, collect/port/UpdateStore@v1, "build:version"]
+            calls: [collect/usecase/CollectSnapshot, collect/usecase/LatestNetwork, collect/port/SessionCache@v1.Len, collect/port/SessionCache@v1.LastRequest, collect/port/UpdateStore@v1.LoadUpdate]
+        jobs:
+          - name: tick
+            every: 1s
+            description: The refresh, the eviction, the heartbeat.
+            handler: Tick
+            uses: [collect/usecase/RefreshNetwork, collect/port/SessionCache@v1, collect/port/Clock@v1]
+            calls: [collect/usecase/RefreshNetwork, collect/port/SessionCache@v1.Evict, collect/port/Clock@v1.Now]
+          - name: update
+            every: 1h
+            description: The silent self-update (D11); the daemon stops after an install.
+            handler: Update
+            uses: [collect/usecase/CheckUpdate, "build:version"]
+            calls: [collect/usecase/CheckUpdate]
+        clis:
+          - {name: status, doc: "says what the instance's daemon is doing", handler: Status, uses: ["build:version"]}
+          - {name: stop, doc: "stops the instance's daemon", handler: Stop, uses: ["build:version"]}
+        activity:
+          handler: Busy
+          uses: [collect/port/SessionCache@v1]
+          calls: [collect/port/SessionCache@v1.Len]
 
       - {name: gitcli, role: adapter, code: 64.3.4, uses: [collector, snapshot], adapters: [{name: Git, implements: [collect/port/Repository@v1]}]}
       - {name: mcpconfig, role: adapter, code: 64.3.5, uses: [collector, snapshot], description: "The MCP servers from the managed file, the host's command line, the local, project and user scopes and the enabled plugins.", adapters: [{name: Config, implements: [collect/port/MCPConfig@v1]}]}

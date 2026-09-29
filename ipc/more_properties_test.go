@@ -19,7 +19,7 @@ func seeded(t *testing.T, seed uint64) {
 func propertyInstanceCachePathInsideCache(t *testing.T, seed uint64) {
 	seeded(t, seed)
 	rapid.Check(t, func(t *rapid.T) {
-		inst := Locate(LocateInput{RuntimeDir: "/run/user/1", UID: 1, ConfigDir: rapid.String().Draw(t, "c"), Executable: "/e"})
+		inst := Locate(LocateInput{RuntimeDir: "/run/user/1/daemon", Key: rapid.StringMatching(`[0-9a-f]{8}`).Draw(t, "key")})
 		p := inst.CachePath(keyGen().Draw(t, "k"))
 		if filepath.Dir(p) != inst.Cache || !strings.HasSuffix(p, ".json") {
 			t.Fatalf("CachePath = %q outside %q", p, inst.Cache)
@@ -41,8 +41,9 @@ func propertyCompatibleMajorOne(t *testing.T, seed uint64) {
 
 func propertyHereUnderRuntimeDir(t *testing.T, seed uint64) {
 	seeded(t, seed)
-	dir := t.TempDir()
+	dir := filepath.Join(t.TempDir(), "rt")
 	t.Setenv("XDG_RUNTIME_DIR", dir)
+	t.Setenv("RUNTIME_DIRECTORY", "")
 	rapid.Check(t, func(rt *rapid.T) {
 		cfg := "/cfg/" + rapid.StringMatching(`[a-z]{1,8}`).Draw(rt, "cfg")
 		t.Setenv("CLAUDE_CONFIG_DIR", cfg)
