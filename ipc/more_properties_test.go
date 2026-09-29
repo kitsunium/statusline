@@ -19,7 +19,7 @@ func seeded(t *testing.T, seed uint64) {
 func propertyInstanceCachePathInsideCache(t *testing.T, seed uint64) {
 	seeded(t, seed)
 	rapid.Check(t, func(t *rapid.T) {
-		inst := Locate(LocateInput{RuntimeDir: "/run/user/1/daemon", Key: rapid.StringMatching(`[0-9a-f]{8}`).Draw(t, "key")})
+		inst := Locate(LocateInput{RuntimeDir: "/run/user/1/statusline", Key: rapid.StringMatching(`[0-9a-f]{8}`).Draw(t, "key")})
 		p := inst.CachePath(keyGen().Draw(t, "k"))
 		if filepath.Dir(p) != inst.Cache || !strings.HasSuffix(p, ".json") {
 			t.Fatalf("CachePath = %q outside %q", p, inst.Cache)

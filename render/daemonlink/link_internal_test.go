@@ -93,7 +93,7 @@ func setup(t *testing.T) (ipc.Instance, string, string) {
 	if err := os.WriteFile(exe, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	inst := ipc.Locate(ipc.LocateInput{RuntimeDir: dir, Key: "0123abcd"})
+	inst := ipc.Locate(ipc.LocateInput{RuntimeDir: dir, Key: "0123abcd", Socket: filepath.Join(dir, "daemon-daemon-0123abcd.sock")})
 	return inst, exe, marker
 }
 

@@ -6,17 +6,13 @@ package ipc
 
 import "path/filepath"
 
-// daemonSocketPrefix is the framework's name for the daemon's listener:
-// <service>-<listener>-<key>.sock, service and listener both "daemon".
-const daemonSocketPrefix string = "daemon-daemon-"
-
-// locate places the socket where the framework's listener puts it and the
-// instance's own files beside it, in a directory named after the same key.
+// locate keeps the socket the framework placed and puts the instance's own
+// files beside it, in a directory named after the same key.
 func locate(in LocateInput) Instance {
 	dir := filepath.Join(in.RuntimeDir, "statusline-"+in.Key)
 	return Instance{
 		Dir:       dir,
-		Socket:    filepath.Join(in.RuntimeDir, daemonSocketPrefix+in.Key+".sock"),
+		Socket:    in.Socket,
 		Cache:     filepath.Join(dir, "cache"),
 		State:     filepath.Join(dir, "state"),
 		Log:       filepath.Join(dir, "daemon.log"),

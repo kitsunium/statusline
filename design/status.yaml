@@ -289,13 +289,14 @@ domains:
             methods:
               - {name: CachePath, params: [{name: key, type: Key}], results: [{type: string}], properties: [InsideCache]}
           - name: LocateInput
-            description: "An instance is the framework's: the daemon app's runtime directory, and the key of its scopes (UID, executable, CLAUDE_CONFIG_DIR) — the same key its singleton and its socket take."
+            description: "An instance is the framework's: the product's runtime directory, the key of its scopes (UID, executable, CLAUDE_CONFIG_DIR) — the same key its singleton takes — and the socket its listener opens (kit.SocketPathFor)."
             fields:
               - {name: RuntimeDir, type: string}
               - {name: Key, type: string}
+              - {name: Socket, type: string}
         functions:
           - {name: Locate, params: [{name: in, type: LocateInput}], results: [{type: Instance}], properties: [Distinct]}
-          - {name: Here, description: "Here locates the instance of the running executable: the framework's scope key and the daemon app's runtime directory.", results: [{type: Instance}, {type: error}], properties: [UnderRuntimeDir]}
+          - {name: Here, description: "Here locates the instance of the running executable: the framework's scope key, the product's runtime directory and its listener's socket.", results: [{type: Instance}, {type: error}], properties: [UnderRuntimeDir]}
           - {name: WriteFrame, params: [{name: w, type: io.Writer}, {name: v, type: any}], results: [{type: error}], properties: [LengthPrefixed]}
           - {name: ReadFrame, params: [{name: r, type: io.Reader}, {name: v, type: any}], results: [{type: error}], properties: [Roundtrip]}
           - {name: CompareVersions, params: [{name: a, type: string}, {name: b, type: string}], results: [{type: int}], properties: [Order]}

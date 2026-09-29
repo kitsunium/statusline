@@ -1,6 +1,6 @@
 # Written by kit gen: the design digest the generated files come from.
 apiVersion: kit.kitsunium/design/v1
-digest: sha256:371eb9b52162ca35da1e8cae0f2f88f50639e87b018bcd6e1cd760b0ba42b78d
+digest: sha256:2fe8d86cbae61dd09910f21ff1088719bef537ae1defa6374bdd41ff060206d8
 files:
   - cmd/statusline/client/wire_gen.go
   - cmd/statusline/daemon/wire_gen.go
