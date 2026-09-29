@@ -73,6 +73,10 @@ go build -o /tmp/harness .
 
 # latency, process start to exit, after a warm-up run
 /tmp/harness latency -bin <binary> -flavour kit -runs 300 -scenario busy/default
+
+# two binaries against each other: alternated rounds, load average beside
+# every measure, median of the p50s; nothing measured at a load of 3 or more
+../latency-ab.sh -a <before> -b <after> -rounds 6 -runs 300
 ```
 
 ## Legacy latency baseline

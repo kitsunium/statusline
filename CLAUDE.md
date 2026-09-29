@@ -59,6 +59,9 @@ docs/adr           decisions the design's evidence points to
   `$XDG_RUNTIME_DIR/statusline-<uid>/<digest>/` (0700): `daemon.sock`, the
   SDK file lock, `daemon.pid`, `heartbeat`, `cache/<key>.json`,
   `state/{network,update}.json`, `daemon.log` (256 KiB, one rotation).
+- Release builds are static (`CGO_ENABLED=0 -trimpath`, `make build`; the
+  CI's parity job refuses a dynamic binary): no dynamic loader at every
+  start of the client.
 - The client dials with a 250 ms budget; no daemon → renders the key's cache
   and starts `statusline daemon`; an older daemon is asked to stop and
   replaced; a newer one is never stopped; a mute one (no answer, heartbeat
@@ -80,6 +83,13 @@ docs/adr           decisions the design's evidence points to
 - `make test` (race), `make design` (kit gen -check, kit check), `kit test`
   (tests per component),
   `make parity` (88 black-box goldens must pass), `make latency`.
+- Run the parity check outside the heavy slice: the client's 250 ms dial
+  budget does not survive `lourd`'s CPU quota and nice level on a loaded
+  machine, and a few goldens then fail on timing alone.
+- `testdata/parity/latency-ab.sh -a <before> -b <after>` compares two
+  binaries' warm p50, alternating them round by round and writing the load
+  average next to every measure; it starts no measure at a 1-minute load of
+  3 or more.
 - `kit harness install` writes the kit hooks into this clone's local
   settings and excludes them through `.git/info/exclude` (generated files
   refused to Write/Edit, a digest check on Stop, each hook on the kit that
