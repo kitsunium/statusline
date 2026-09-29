@@ -70,9 +70,9 @@ func now(ctx context.Context) time.Time {
 	return time.Now()
 }
 
-// halt ends the daemon the way a signal does: the framework's main stops the
-// app on SIGTERM, and a handler has no other way to ask for it.
-func halt(reason string) {
+// halt asks the framework to end the daemon's run, which drains every
+// component as a signal would.
+func halt(ctx context.Context, reason string) {
 	if !run.halting.CompareAndSwap(false, true) {
 		return
 	}
@@ -80,9 +80,7 @@ func halt(reason string) {
 		run.log.printf("stopping: %s", reason)
 	}
 	_ = os.Remove(run.instance.PID)
-	if p, err := os.FindProcess(os.Getpid()); err == nil {
-		_ = p.Signal(terminate)
-	}
+	kit.Stop(ctx)
 }
 
 // serve is one connection of the contract: Hello both ways, then the
@@ -103,7 +101,7 @@ func serve(ctx context.Context, conn *sdkipc.Conn) error {
 	}
 	_ = ipc.WriteFrame(conn, answer(ctx, req))
 	if req.Op == ipc.OpStop {
-		halt("asked by pid " + strconv.Itoa(hello.PID))
+		halt(ctx, "asked by pid "+strconv.Itoa(hello.PID))
 	}
 	return nil
 }
@@ -190,7 +188,7 @@ func update(ctx context.Context) error {
 		notice := out.Notice
 		run.notice.Store(&notice)
 		run.log.printf("installed %s", out.Notice.Version)
-		halt("updated")
+		halt(ctx, "updated")
 	}
 	return err
 }
