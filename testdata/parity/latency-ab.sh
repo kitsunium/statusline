@@ -16,6 +16,9 @@
 # measures themselves run outside the heavy slice: its CPU quota and nice
 # level would be measured too.
 set -euo pipefail
+# printf %f reads its argument in the locale: a decimal comma locale refuses
+# the harness's 7.221.
+export LC_ALL=C
 
 a="" b="" rounds=6 runs=300 scenario=busy/default maxload=3 target=9.2 out=""
 while [[ $# -gt 0 ]]; do
