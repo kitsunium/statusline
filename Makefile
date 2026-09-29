@@ -6,9 +6,11 @@ BIN := bin/statusline
 # them the binary is a development build that never updates itself.
 LDFLAGS := -X main.version=$(VERSION) -X main.vendorKey=$(VENDOR_KEY)
 
+# A static binary: no cgo resolver or user lookup, no dynamic loader at every
+# start of the client (~1 ms at p50).
 build:
 	@mkdir -p bin
-	go build -ldflags "$(LDFLAGS)" -o $(BIN) ./cmd/statusline
+	CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o $(BIN) ./cmd/statusline
 
 # The structure against design/: regenerate at blank, then kit's check.
 design:

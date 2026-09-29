@@ -67,7 +67,8 @@ jobs:
           go-version-file: go.mod
       - name: build the binary and the harness
         run: |
-          go build -o "$RUNNER_TEMP/statusline" ./cmd/statusline
+          CGO_ENABLED=0 go build -trimpath -o "$RUNNER_TEMP/statusline" ./cmd/statusline
+          file "$RUNNER_TEMP/statusline" | grep -q 'statically linked' || { echo "::error::statusline is not static"; exit 1; }
           (cd testdata/parity/harness && go build -o "$RUNNER_TEMP/harness" .)
       - name: check against the legacy goldens
         working-directory: testdata/parity/harness
