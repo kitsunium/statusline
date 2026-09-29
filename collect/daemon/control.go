@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"os"
 	"time"
+
+	sdkipc "github.com/kitsunium/sdk/pkg/v1/ipc"
 
 	"github.com/kitsunium/statusline/ipc"
 )
@@ -53,8 +54,7 @@ func (a *Listener) control(ctx context.Context, args []string) error {
 func (a *Listener) ask(ctx context.Context, op string) (ipc.Response, error) {
 	ctx, cancel := context.WithTimeout(ctx, controlBudget)
 	defer cancel()
-	var dialer net.Dialer
-	conn, err := dialer.DialContext(ctx, "unix", a.instance.Socket)
+	conn, err := sdkipc.Dial(ctx, sdkipc.Config{Path: a.instance.Socket})
 	if err != nil {
 		return ipc.Response{}, err
 	}

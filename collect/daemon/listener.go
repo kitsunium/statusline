@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"net"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -16,6 +15,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/kitsunium/sdk/pkg/v1/errs"
+	sdkipc "github.com/kitsunium/sdk/pkg/v1/ipc"
 	"github.com/kitsunium/sdk/pkg/v1/lock"
 
 	"github.com/kitsunium/statusline/collect/collector"
@@ -97,15 +98,11 @@ func (a *Listener) run(ctx context.Context, args []string) error {
 	}
 	defer func() { _ = lease.Release(context.Background()) }()
 
-	// The lock is ours, so any socket left there is a dead daemon's
-	_ = os.Remove(a.instance.Socket)
-	ln, err := net.Listen("unix", a.instance.Socket)
+	// The SDK's private socket: 0600 in the 0700 instance directory, a dead
+	// daemon's socket replaced, a live one refused, and on Linux a peer of
+	// another account closed before Accept returns it (SO_PEERCRED)
+	ln, err := sdkipc.Listen(sdkipc.Config{Path: a.instance.Socket})
 	if err != nil {
-		return err
-	}
-	defer func() { _ = os.Remove(a.instance.Socket) }()
-	if err := os.Chmod(a.instance.Socket, filePerm); err != nil {
-		_ = ln.Close()
 		return err
 	}
 	_ = os.WriteFile(a.instance.PID, []byte(strconv.Itoa(os.Getpid())), filePerm)
@@ -257,12 +254,12 @@ func updatesDisabled(getenv func(string) string) bool {
 	return getenv("STATUSLINE_NO_SELF_UPDATE") != "" || getenv("STATUS_LINE_NO_SELF_UPDATE") != ""
 }
 
-// accept serves connections until the listener closes.
-func (a *Listener) accept(ln net.Listener) {
+// accept serves the admitted connections until the listener closes.
+func (a *Listener) accept(ln *sdkipc.Listener) {
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			if errors.Is(err, net.ErrClosed) {
+			if errs.HasCode(err, sdkipc.CodeClosed) {
 				return
 			}
 			a.log.printf("accept: %v", err)

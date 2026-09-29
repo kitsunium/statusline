@@ -21,6 +21,7 @@ domains:
           - {name: UpdateInterval, type: time.Duration, value: "time.Hour", description: "UpdateInterval is how often a release is looked for."}
         errors:
           - {name: ErrUsageUnavailable, serial: 1, message: the usage API is unavailable}
+          - {name: ErrProbeFailed, serial: 2, message: the new binary failed its probe and was rolled back}
         values:
           - {name: HostSession, fields: [{name: PID, type: int}, {name: Working, type: bool}]}
           - {name: Release, fields: [{name: Version, type: string}, {name: Asset, type: string}]}
@@ -91,11 +92,10 @@ domains:
           - name: ReleaseSource
             direction: out
             version: 1
+            description: "ReleaseSourceV1 installs a signed release; the new binary is probed, and a failed probe puts <bin>.prev back and answers state.ErrProbeFailed."
             methods:
               - {name: Latest, results: [{type: state.Release}]}
               - {name: Install, params: [{name: rel, type: state.Release}]}
-              - {name: Probe}
-              - {name: Rollback}
           - {name: Clock, direction: out, version: 1, methods: [{name: Now, results: [{type: time.Time}]}]}
           - name: Command
             direction: in
@@ -166,8 +166,6 @@ domains:
               - collect/port/UpdateStore@v1.LoadUpdate
               - collect/port/ReleaseSource@v1.Latest
               - collect/port/ReleaseSource@v1.Install
-              - collect/port/ReleaseSource@v1.Probe
-              - collect/port/ReleaseSource@v1.Rollback
               - collect/port/UpdateStore@v1.SaveUpdate
             scenarios:
               - {name: installs and probes a newer release, kind: success}
@@ -215,7 +213,7 @@ domains:
       - {name: statuspage, role: adapter, code: 64.3.12, uses: [collector, snapshot], evidence: [status-page-summary-shape], adapters: [{name: StatusPage, implements: [collect/port/StatusPage@v1]}]}
       - {name: statefile, role: adapter, code: 64.3.13, uses: [collector, snapshot, ipc, state], description: "The instance's state files: network and update bookkeeping, and every key's last snapshot for a cold client.", adapters: [{name: Files, implements: [collect/port/NetworkStore@v1, collect/port/SnapshotCache@v1, collect/port/UpdateStore@v1]}]}
       - {name: sessioncache, role: adapter, code: 64.3.14, uses: [collector, snapshot, ipc, state], adapters: [{name: Cache, implements: [collect/port/SessionCache@v1]}]}
-      - {name: releases, role: adapter, code: 64.3.15, uses: [collector, state, ipc], description: "The SDK's signed self-update, with <bin>.prev kept, a probe and a rollback.", adapters: [{name: Releases, implements: [collect/port/ReleaseSource@v1], uses: ["build:version", "build:vendorKey"]}]}
+      - {name: releases, role: adapter, code: 64.3.15, uses: [collector, state, ipc], description: "The SDK's signed self-update: vendor keys, signature domain, automatic consent, no elevation, <bin>.prev with a probe and a rollback.", adapters: [{name: Releases, implements: [collect/port/ReleaseSource@v1], uses: ["build:version", "build:vendorKey"]}]}
       - {name: wallclock, role: adapter, code: 64.3.16, uses: [collector], adapters: [{name: Clock, implements: [collect/port/Clock@v1]}]}
 
     sequences:
@@ -235,5 +233,4 @@ domains:
           - call: collect/port/UpdateStore@v1.LoadUpdate
           - call: collect/port/ReleaseSource@v1.Latest
           - call: collect/port/ReleaseSource@v1.Install
-          - call: collect/port/ReleaseSource@v1.Probe
           - call: collect/port/UpdateStore@v1.SaveUpdate

@@ -12,6 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kitsunium/sdk/pkg/v1/errs"
+	sdkipc "github.com/kitsunium/sdk/pkg/v1/ipc"
+
 	"github.com/kitsunium/statusline/ipc"
 	"github.com/kitsunium/statusline/render/show"
 	"github.com/kitsunium/statusline/snapshot"
@@ -26,6 +29,8 @@ var (
 	errOlder = errors.New("daemon is older than this client")
 	errNewer = errors.New("daemon speaks a newer, incompatible protocol")
 	errEmpty = errors.New("daemon answered without a snapshot")
+	// errNoSocket says no daemon listens at the instance.
+	errNoSocket = errors.New("no daemon socket")
 )
 
 // config is what the link knows about the client and its instance.
@@ -96,8 +101,12 @@ func (l *Link) snapshot(ctx context.Context, key ipc.Key) (snapshot.Snapshot, st
 func (l *Link) exchange(ctx context.Context, req ipc.Request, replaceOlder bool) (ipc.Response, error) {
 	ctx, cancel := context.WithTimeout(ctx, l.cfg.Budget)
 	defer cancel()
-	var dialer net.Dialer
-	conn, err := dialer.DialContext(ctx, "unix", l.cfg.Instance.Socket)
+	// No socket at all (a first start, a stopped daemon) is nobody to dial:
+	// the SDK would read a missing directory as an unsafe one
+	if _, err := os.Lstat(l.cfg.Instance.Socket); err != nil {
+		return ipc.Response{}, errNoSocket
+	}
+	conn, err := sdkipc.Dial(ctx, sdkipc.Config{Path: l.cfg.Instance.Socket})
 	if err != nil {
 		return ipc.Response{}, err
 	}
@@ -199,8 +208,9 @@ func (l *Link) replaceMute() bool {
 	return kill(pid) == nil
 }
 
-// isDialError reports that no daemon listens: no socket, or a dead one.
+// isDialError reports that no daemon listens: no socket, or a dead one. A
+// socket another account owns is refused too, but nothing is started
+// beside it.
 func isDialError(err error) bool {
-	var op *net.OpError
-	return errors.As(err, &op) && op.Op == "dial"
+	return errors.Is(err, errNoSocket) || errs.HasCode(err, sdkipc.CodeDialFailed)
 }

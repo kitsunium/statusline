@@ -3,6 +3,7 @@ package collector
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -222,18 +223,13 @@ func (r *releases) Latest(context.Context) (state.Release, error) {
 	return state.Release{Version: r.latest}, nil
 }
 
+// Install stands for the SDK: a failed probe rolls back inside it.
 func (r *releases) Install(context.Context, state.Release) error {
 	r.hit("install")
-	return nil
-}
-
-func (r *releases) Probe(context.Context) error {
-	r.hit("probe")
-	return r.probeErr
-}
-
-func (r *releases) Rollback(context.Context) error {
-	r.hit("rollback")
+	if r.probeErr != nil {
+		r.hit("rollback")
+		return fmt.Errorf("%w: %v", state.ErrProbeFailed, r.probeErr)
+	}
 	return nil
 }
 

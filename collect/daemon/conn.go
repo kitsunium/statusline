@@ -2,9 +2,10 @@ package daemon
 
 import (
 	"context"
-	"net"
 	"os"
 	"time"
+
+	sdkipc "github.com/kitsunium/sdk/pkg/v1/ipc"
 
 	"github.com/kitsunium/statusline/ipc"
 )
@@ -14,13 +15,9 @@ import (
 const connDeadline time.Duration = 5 * time.Second
 
 // handle serves one request per connection: Hello both ways, then the
-// operation. A peer that is not this user is dropped before a byte is read.
-func (a *Listener) handle(conn net.Conn) {
+// operation. The SDK already refused a peer of another account.
+func (a *Listener) handle(conn *sdkipc.Conn) {
 	defer func() { _ = conn.Close() }()
-	if !samePeer(conn) {
-		a.log.printf("refused a peer of another user")
-		return
-	}
 	_ = conn.SetDeadline(time.Now().Add(connDeadline))
 	if err := ipc.WriteFrame(conn, ipc.Hello{Protocol: ipc.Protocol, Version: a.version, PID: os.Getpid()}); err != nil {
 		return

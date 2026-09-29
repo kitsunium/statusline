@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/kitsunium/statusline/collect/state"
+
 	"github.com/kitsunium/statusline/ipc"
 	"github.com/kitsunium/statusline/snapshot"
 )
@@ -38,14 +40,14 @@ func (h *CheckUpdateHandler) execute(ctx context.Context, in CheckUpdateInput) (
 		return CheckUpdateOutput{}, errors.Join(err, h.updateStore.SaveUpdate(ctx, st))
 	}
 	notice := snapshot.UpdateNotice{Available: true, Version: rel.Version}
+	// The release source probes the new binary and puts the previous one
+	// back when the probe fails: that version is then never installed again
 	if err := h.releaseSource.Install(ctx, rel); err != nil {
 		st.Failures++
+		if errors.Is(err, state.ErrProbeFailed) {
+			st.BadVersion = rel.Version
+		}
 		return CheckUpdateOutput{}, errors.Join(fmt.Errorf("install %s: %w", rel.Version, err), h.updateStore.SaveUpdate(ctx, st))
-	}
-	if err := h.releaseSource.Probe(ctx); err != nil {
-		rollback := h.releaseSource.Rollback(ctx)
-		st.BadVersion, st.Failures = rel.Version, st.Failures+1
-		return CheckUpdateOutput{}, errors.Join(fmt.Errorf("probe %s: %w", rel.Version, err), rollback, h.updateStore.SaveUpdate(ctx, st))
 	}
 	st.Installed, st.Failures = rel.Version, 0
 	return CheckUpdateOutput{Notice: notice, Installed: true}, h.updateStore.SaveUpdate(ctx, st)

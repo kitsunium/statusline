@@ -2,10 +2,8 @@ package releases
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
-	"os"
-	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/kitsunium/sdk/pkg/v1/selfupdate"
@@ -13,12 +11,11 @@ import (
 	"github.com/kitsunium/statusline/collect/state"
 )
 
-// fakeUpdater stands for the SDK service: Upgrade writes a new binary.
+// fakeUpdater stands for the SDK service.
 type fakeUpdater struct {
-	exe     string
-	latest  string
-	script  string
-	upgrade error
+	latest   string
+	upgrade  error
+	upgraded int
 }
 
 func (f *fakeUpdater) CheckForUpdate() (selfupdate.Update, error) {
@@ -26,79 +23,63 @@ func (f *fakeUpdater) CheckForUpdate() (selfupdate.Update, error) {
 }
 
 func (f *fakeUpdater) Upgrade() (selfupdate.Update, error) {
+	f.upgraded++
 	if f.upgrade != nil {
 		return selfupdate.Update{}, f.upgrade
-	}
-	if err := os.WriteFile(f.exe, []byte(f.script), 0o755); err != nil {
-		return selfupdate.Update{}, err
 	}
 	return selfupdate.Update{LatestVersion: f.latest, Available: true}, nil
 }
 
-func setup(t *testing.T, script string) (*Releases, *fakeUpdater, string) {
-	t.Helper()
-	if runtime.GOOS == "windows" {
-		t.Skip("shell scripts stand for binaries")
+func source(fake *fakeUpdater, keys int) *Releases {
+	cfg := config{Version: "v1.0.0"}
+	for i := 0; i < keys; i++ {
+		cfg.VendorKeys = append(cfg.VendorKeys, []byte("key"))
 	}
-	exe := filepath.Join(t.TempDir(), "statusline")
-	if err := os.WriteFile(exe, []byte("#!/bin/sh\necho statusline v1.0.0\n"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	fake := &fakeUpdater{exe: exe, latest: "v1.1.0", script: script}
-	return &Releases{releases{cfg: config{Version: "v1.0.0", Executable: exe, VendorKey: []byte("key")}, svc: fake}}, fake, exe
+	return &Releases{releases{cfg: cfg, svc: fake}}
 }
 
-func TestInstallKeepsPreviousAndProbes(t *testing.T) {
-	src, _, exe := setup(t, "#!/bin/sh\necho statusline v1.1.0\n")
-	ctx := context.Background()
-	rel, err := src.Latest(ctx)
+func TestLatestAndInstall(t *testing.T) {
+	fake := &fakeUpdater{latest: "v1.1.0"}
+	src := source(fake, 1)
+	rel, err := src.Latest(context.Background())
 	if err != nil || rel.Version != "v1.1.0" {
 		t.Fatalf("Latest() = %+v, %v", rel, err)
 	}
-	if err := src.Install(ctx, rel); err != nil {
-		t.Fatal(err)
+	if err := src.Install(context.Background(), rel); err != nil || fake.upgraded != 1 {
+		t.Errorf("Install() = %v, upgraded %d", err, fake.upgraded)
 	}
-	prev, err := os.ReadFile(exe + prevSuffix)
-	if err != nil || string(prev) != "#!/bin/sh\necho statusline v1.0.0\n" {
-		t.Errorf("<bin>.prev = %q, %v", prev, err)
-	}
-	if err := src.Probe(ctx); err != nil {
-		t.Errorf("Probe() = %v", err)
+	fake.latest = ""
+	if rel, err := src.Latest(context.Background()); err != nil || rel.Version != "" {
+		t.Errorf("nothing newer: %+v, %v", rel, err)
 	}
 }
 
-func TestBadBinaryRollsBack(t *testing.T) {
-	src, _, exe := setup(t, "#!/bin/sh\nexit 3\n")
-	ctx := context.Background()
-	if err := src.Install(ctx, state.Release{Version: "v1.1.0"}); err != nil {
-		t.Fatal(err)
+func TestProbeFailureIsTheProductsError(t *testing.T) {
+	src := source(&fakeUpdater{latest: "v1.1.0", upgrade: selfupdate.ProbeFailed}, 1)
+	err := src.Install(context.Background(), state.Release{Version: "v1.1.0"})
+	if !errors.Is(err, state.ErrProbeFailed) {
+		t.Errorf("Install() = %v, want state.ErrProbeFailed", err)
 	}
-	if err := src.Probe(ctx); err == nil {
-		t.Fatal("a failing binary passed its probe")
-	}
-	if err := src.Rollback(ctx); err != nil {
-		t.Fatal(err)
-	}
-	if got, _ := os.ReadFile(exe); string(got) != "#!/bin/sh\necho statusline v1.0.0\n" {
-		t.Errorf("after rollback the binary is %q", got)
+	other := source(&fakeUpdater{latest: "v1.1.0", upgrade: selfupdate.SignatureInvalid}, 1)
+	if err := other.Install(context.Background(), state.Release{Version: "v1.1.0"}); err == nil || errors.Is(err, state.ErrProbeFailed) {
+		t.Errorf("a bad signature = %v, want an error that is no probe failure", err)
 	}
 }
 
 func TestUnsignedBuildInstallsNothing(t *testing.T) {
-	src, _, exe := setup(t, "#!/bin/sh\necho statusline v1.1.0\n")
-	src.cfg.VendorKey = nil
-	if err := src.Install(context.Background(), state.Release{Version: "v1.1.0"}); !errors.Is(err, errNotSigned) {
-		t.Errorf("Install() = %v, want errNotSigned", err)
-	}
-	if _, err := os.Stat(exe + prevSuffix); err == nil {
-		t.Error("an unsigned build touched the disk")
+	fake := &fakeUpdater{latest: "v1.1.0"}
+	if err := source(fake, 0).Install(context.Background(), state.Release{Version: "v1.1.0"}); !errors.Is(err, errNotSigned) || fake.upgraded != 0 {
+		t.Errorf("Install() = %v, upgraded %d", err, fake.upgraded)
 	}
 }
 
-func TestLatestNothingNewer(t *testing.T) {
-	src, fake, _ := setup(t, "")
-	fake.latest = ""
-	if rel, err := src.Latest(context.Background()); err != nil || rel.Version != "" {
-		t.Errorf("Latest() = %+v, %v", rel, err)
+func TestVendorKeysAreCommaSeparated(t *testing.T) {
+	a, b := base64.StdEncoding.EncodeToString([]byte("first")), base64.StdEncoding.EncodeToString([]byte("second"))
+	r := newReleases("v1.0.0", a+", "+b+",,!notbase64")
+	if len(r.cfg.VendorKeys) != 2 || string(r.cfg.VendorKeys[1]) != "second" {
+		t.Errorf("keys = %q", r.cfg.VendorKeys)
+	}
+	if len(newReleases("dev", "").cfg.VendorKeys) != 0 {
+		t.Error("an empty key string gave keys")
 	}
 }
