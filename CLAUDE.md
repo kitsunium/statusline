@@ -56,9 +56,12 @@ docs/adr           decisions the design's evidence points to
 ## Client and daemon
 
 - Instance = (UID, CLAUDE_CONFIG_DIR or ~/.claude, executable path), under
-  `$XDG_RUNTIME_DIR/statusline-<uid>/<digest>/` (0700): `daemon.sock`, the
-  SDK file lock, `daemon.pid`, `heartbeat`, `cache/<key>.json`,
-  `state/{network,update}.json`, `daemon.log` (256 KiB, one rotation).
+  `$XDG_RUNTIME_DIR/statusline/`: the socket the framework names
+  (`daemon-daemon-<key>.sock`, `kit.SocketPathFor`), the SDK file lock in
+  `locks/`, and `statusline-<key>/` (0700): `daemon.pid`, `heartbeat`,
+  `cache/<key>.json`, `state/{network,update}.json`, `daemon.log` (256 KiB,
+  one rotation). The socket path must fit a sun_path (108 bytes): under a
+  longer runtime directory the daemon refuses to start (`MISCONFIGURED`).
 - Release builds are static (`CGO_ENABLED=0 -trimpath`, `make build`; the
   CI's parity job refuses a dynamic binary): no dynamic loader at every
   start of the client.
