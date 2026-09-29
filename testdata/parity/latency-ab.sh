@@ -63,7 +63,7 @@ for ((r = 1; r <= rounds; r++)); do
       break 2
     fi
     before=$(load)
-    json=$out/r$r-$side.json
+    json="$out/r$r-$side.json"
     (cd "$here/harness" && "$harness" latency -bin "${bin[$side]}" -flavour kit \
       -runs "$runs" -scenario "$scenario" -out "$json" >/dev/null)
     after=$(load)
