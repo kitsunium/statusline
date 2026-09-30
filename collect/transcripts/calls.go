@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -39,10 +40,11 @@ var (
 )
 
 // unsafeID matches the characters replaced in a session directory name, and
-// agentID the only agent ids turned into a path.
+// agentID the only agent ids turned into a path. Compiled on first use: the
+// client links this package but never runs it.
 var (
-	unsafeID = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
-	agentID  = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+	unsafeID = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`[^a-zA-Z0-9_-]`) })
+	agentID  = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[a-zA-Z0-9_-]+$`) })
 )
 
 // calls scans one session's transcripts for MCP calls.
@@ -113,7 +115,7 @@ func newCalls(transcriptPath, sessionID string, now time.Time) *calls {
 		}
 		base = filepath.Join(home, ".claude")
 	}
-	p.agentsFile = filepath.Join(base, "kodflow", "sessions", unsafeID.ReplaceAllString(sessionID, "-"), "agents.json")
+	p.agentsFile = filepath.Join(base, "kodflow", "sessions", unsafeID().ReplaceAllString(sessionID, "-"), "agents.json")
 	return p
 }
 
@@ -168,7 +170,7 @@ func (p *calls) subagentTranscripts(now time.Time) []string {
 	// Keep the agents still running with an id safe to put in a path
 	for id, agent := range reg.Agents {
 		// A stopped, stale or oddly named agent is skipped
-		if agent.Stopped != nil || agent.Started < cutoff || !agentID.MatchString(id) {
+		if agent.Stopped != nil || agent.Started < cutoff || !agentID().MatchString(id) {
 			continue
 		}
 		paths = append(paths, filepath.Join(p.subagentDir, "agent-"+id+".jsonl"))
