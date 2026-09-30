@@ -1,0 +1,71 @@
+{
+  "description": "Servers given on the host's command line (--mcp-config, variadic, repeatable, inline JSON or relative path) come right after managed ones; a later config never overrides an earlier name.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}/work/atlas"
+    },
+    "context_window": {
+      "used_percentage": 20,
+      "context_window_size": 200000
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 20,
+        "resets_at": "{{epoch:+12000}}"
+      }
+    },
+    "effort": {
+      "level": "high"
+    },
+    "session_id": "parity-session-0003",
+    "transcript_path": "{{home}}/.claude/projects/-work-atlas/parity-session-0003.jsonl"
+  },
+  "repos": [
+    {
+      "dir": "home/work/atlas",
+      "branch": "main",
+      "commit": {
+        "README.md": "atlas\n"
+      }
+    }
+  ],
+  "host": {
+    "args": [
+      "--mcp-config",
+      "cli-a.json",
+      "{\"mcpServers\":{\"inline\":{},\"alpha\":{\"disabled\":true}}}",
+      "--verbose",
+      "--mcp-config=cli-b.json"
+    ],
+    "cwd": "home/work/atlas"
+  },
+  "files": {
+    "home/.claude/sessions/{{pid}}.json": {
+      "pid": "{{pid}}",
+      "sessionId": "parity-session-0003",
+      "status": "idle"
+    },
+    "home/work/atlas/cli-a.json": {
+      "mcpServers": {
+        "alpha": {},
+        "beta": {}
+      }
+    },
+    "home/work/atlas/cli-b.json": {
+      "mcpServers": {
+        "gamma": {}
+      }
+    },
+    "home/.claude.json": {
+      "mcpServers": {
+        "user-one": {}
+      }
+    }
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "description": "An undecodable payload never masquerades as zero usage.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}"
+    },
+    "context_window": {
+      "used_percentage": 30
+    }
+  },
+  "credentials": true,
+  "scope": "legacy-only",
+  "note": "the daemon never stores an undecodable payload; pinned by collect/usageapi TestFetchRefusals",
+  "usage": [
+    "not",
+    "an",
+    "object"
+  ],
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

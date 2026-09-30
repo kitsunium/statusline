@@ -1,0 +1,12 @@
+{
+  "limits": [
+    {"kind": "five_hour", "group": "session", "percent": 72, "severity": "normal", "resets_at": "2026-01-01T05:00:00Z", "is_active": true},
+    {"kind": "seven_day", "group": "weekly", "percent": 35, "resets_at": "2026-01-07T00:00:00Z"},
+    {"kind": "weekly_scoped", "group": "weekly", "percent": 81, "resets_at": "2026-01-07T00:00:00Z", "scope": {"model": {"id": "claude-opus", "display_name": "Opus"}}},
+    {"kind": "weekly_scoped", "group": "weekly", "percent": 9, "resets_at": "2026-01-07T00:00:00Z", "scope": {"model": {"id": "claude-sonnet"}}, "is_active": false},
+    {"kind": "weekly_scoped", "group": "weekly", "resets_at": "2026-01-07T00:00:00Z"}
+  ],
+  "five_hour": null,
+  "seven_day": null,
+  "extra_usage": {"is_enabled": true, "monthly_limit": 10000, "used_credits": 9150, "utilization": 91.5, "currency": "EUR", "decimal_places": 2}
+}

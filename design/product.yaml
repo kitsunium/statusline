@@ -1,0 +1,82 @@
+# statusline: one executable, two process roles (D5, D22). The client is what
+# the host runs on every redraw; the daemon collects what is slow or shared.
+apiVersion: kit.kitsunium/design/v1
+product:
+  name: statusline
+  module: github.com/kitsunium/statusline
+  version: v0.1.0
+  closed: true
+  exceptions: []
+
+context:
+  actors:
+    - name: host
+      description: The host CLI. Runs statusline on every redraw with the session JSON on stdin and COLUMNS in the environment, and prints its two lines.
+    - name: user
+      description: Reads the line, sets the STATUSLINE_* variables, runs statusline daemon status or stop.
+  systems:
+    - name: usage-api
+      description: The OAuth usage endpoint of the model provider — quotas and credits. Answers 429 when polled too often.
+    - name: status-page
+      description: The provider's public Statuspage summary.
+    - name: releases
+      description: Signed releases of kitsunium/statusline, installed through the SDK selfupdate.
+    - name: git
+      description: The git CLI, run where the session works.
+    - name: host-files
+      description: What the host writes under its configuration directory — global config, settings, plugins, session registry, transcripts, task lists.
+
+evidence:
+  - name: usage-endpoint-shape
+    kind: observed
+    path: observed/usage-limits.json
+    note: The usage endpoint answers limits[] with kind, group, percent, resets_at, scope and is_active; the legacy five_hour and seven_day buckets are null on some plans. Replayed by collect/usageapi's tests.
+  - name: usage-legacy-buckets
+    kind: observed
+    path: observed/usage-legacy-buckets.json
+    note: An older payload with only the legacy buckets; they are the fallback.
+  - name: usage-null-buckets
+    kind: observed
+    path: observed/usage-null-buckets.json
+    note: A plan without a weekly cap; the weekly quota stays absent, never 0 %.
+  - name: status-page-summary-shape
+    kind: observed
+    path: observed/status-summary.json
+    note: The summary lists components with name, status and group. Replayed by collect/statuspage's tests.
+  - name: one-binary-two-processes
+    kind: decision
+    path: ../../docs/adr/0001-one-binary-two-processes.md
+    note: ADR 0001 — client and daemon, the contract, the 429 back-off, the silent update.
+  - name: condense-policy
+    kind: decision
+    path: ../../docs/adr/0002-line-one-condenses-by-levels-and-weights.md
+    note: ADR 0002 — line one condenses by levels and weights.
+  - name: palette-contrast
+    kind: decision
+    path: ../../docs/adr/0003-every-ink-holds-4-5-to-1.md
+    note: ADR 0003 — every ink holds 4.5:1 on its ground.
+  - name: quota-sources
+    kind: decision
+    path: ../../docs/adr/0004-stdin-wins-and-absent-stays-absent.md
+    note: ADR 0004 — stdin wins, and an absent quota stays absent.
+
+binaries:
+  - name: statusline
+    description: The status line, and the daemon that collects for it.
+    build:
+      - {name: version, default: dev}
+      - {name: vendorKey}
+    roles:
+      - name: client
+        description: What the host runs on every redraw.
+        profile: cli
+        mounts: [cli]
+      - name: daemon
+        command: daemon
+        description: One per (UID, host configuration directory, executable), started by a client, stopped a minute after its last session.
+        profile: daemon
+        mounts: [daemon]
+        idleStop: 60s
+        singletonPer: [uid, executable, "env:CLAUDE_CONFIG_DIR|~/.claude"]
+    contracts:
+      - {from: client, to: daemon, port: collect/port/Daemon@v1}

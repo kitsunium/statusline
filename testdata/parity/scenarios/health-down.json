@@ -1,0 +1,40 @@
+{
+  "description": "Two impaired components: red sparkle.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}"
+    },
+    "context_window": {
+      "used_percentage": 5
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 40,
+        "resets_at": "{{epoch:+9000}}"
+      }
+    }
+  },
+  "health": {
+    "components": [
+      {
+        "name": "claude.ai",
+        "status": "partial_outage"
+      },
+      {
+        "name": "Claude API",
+        "status": "degraded_performance"
+      },
+      {
+        "name": "Group",
+        "status": "major_outage",
+        "group": true
+      }
+    ]
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

@@ -1,0 +1,146 @@
+# ci — build, vet, race tests, the parity oracle, and the design check.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - name: vet
+        run: go vet ./...
+      - name: test (race)
+        run: go test -race -count=1 ./...
+      - name: no replace of a kitsunium module
+        run: "! grep -E '^replace .*github.com/kitsunium/' go.mod"
+      - name: never import the platform (D2, D17)
+        run: "! go list -deps ./... | grep -q '^github.com/kitsunium/platform'"
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        include:
+          - {goos: linux, goarch: amd64}
+          - {goos: linux, goarch: arm64}
+          - {goos: darwin, goarch: amd64}
+          - {goos: darwin, goarch: arm64}
+          - {goos: windows, goarch: amd64}
+          - {goos: windows, goarch: arm64}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+      - name: build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: go build -o /dev/null ./cmd/statusline
+
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+      - name: build the binary and the harness
+        run: |
+          CGO_ENABLED=0 go build -trimpath -o "$RUNNER_TEMP/statusline" ./cmd/statusline
+          file "$RUNNER_TEMP/statusline" | grep -q 'statically linked' || { echo "::error::statusline is not static"; exit 1; }
+          (cd testdata/parity/harness && go build -o "$RUNNER_TEMP/harness" .)
+      - name: check against the legacy goldens
+        working-directory: testdata/parity/harness
+        run: '"$RUNNER_TEMP/harness" check -bin "$RUNNER_TEMP/statusline" -flavour kit'
+      - name: latency, warm and cold (reported, not gated)
+        working-directory: testdata/parity/harness
+        run: |
+          "$RUNNER_TEMP/harness" latency -bin "$RUNNER_TEMP/statusline" -flavour kit -runs 200 -scenario busy/default
+          "$RUNNER_TEMP/harness" latency -bin "$RUNNER_TEMP/statusline" -flavour kit -cold -runs 100 -scenario busy/default
+
+  design:
+    # kit gen -check and kit check against design/, with the kit that
+    # kit.version names (its one source, ADR 0010 §7). kitsunium/platform is
+    # private: installing kit needs the secret KIT_READ_TOKEN.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GOPRIVATE: github.com/kitsunium/*
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+      - name: install kit
+        id: kit
+        env:
+          KIT_READ_TOKEN: ${{ secrets.KIT_READ_TOKEN }}
+        run: |
+          if [ -z "$KIT_READ_TOKEN" ]; then
+            echo "::warning::KIT_READ_TOKEN is not set: kitsunium/platform is private, kit cannot be installed, the design was NOT checked"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config --global url."https://x-access-token:${KIT_READ_TOKEN}@github.com/kitsunium/".insteadOf "https://github.com/kitsunium/"
+          go install "github.com/kitsunium/platform/cmd/kit@$(cat kit.version)"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - name: the generated files are the design's
+        if: steps.kit.outputs.ready == 'true'
+        run: kit gen -check
+      - name: kit check
+        if: steps.kit.outputs.ready == 'true'
+        run: kit check
+      # Regressions are judged against the base branch's last report: the
+      # report of the latest ci run on main, kept as an artifact.
+      - name: the base branch's kit test report
+        if: steps.kit.outputs.ready == 'true' && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          id="$(gh run list -R "$GITHUB_REPOSITORY" -w ci -b "$BASE" -s success -L 1 --json databaseId --jq '.[0].databaseId // empty')"
+          if [ -n "$id" ] && gh run download "$id" -R "$GITHUB_REPOSITORY" -n kit-test-report -D "$RUNNER_TEMP/base"; then
+            echo "BASE_REPORT=$RUNNER_TEMP/base/kit-test.json" >> "$GITHUB_ENV"
+          else
+            echo "::notice::no kit test report on $BASE yet: no regression baseline"
+          fi
+      - name: kit test (per component, regressions against the base)
+        if: steps.kit.outputs.ready == 'true'
+        run: |
+          if [ -n "${BASE_REPORT:-}" ]; then
+            kit test -previous "$BASE_REPORT"
+          else
+            kit test
+          fi
+          kit test -json > kit-test.json
+      - name: keep this run's report for the pull requests to come
+        if: steps.kit.outputs.ready == 'true' && github.event_name == 'push'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: kit-test-report
+          path: kit-test.json
+          retention-days: 90

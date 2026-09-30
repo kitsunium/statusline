@@ -1,0 +1,74 @@
+{
+  "description": "CLAUDE_CONFIG_DIR relocates the global config, the plugin registry, the session registry and the tasks.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}/work/atlas"
+    },
+    "context_window": {
+      "used_percentage": 20,
+      "context_window_size": 200000
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 20,
+        "resets_at": "{{epoch:+12000}}"
+      }
+    },
+    "effort": {
+      "level": "high"
+    },
+    "session_id": "parity-session-0003",
+    "transcript_path": "{{home}}/.claude/projects/-work-atlas/parity-session-0003.jsonl"
+  },
+  "repos": [
+    {
+      "dir": "home/work/atlas",
+      "branch": "main",
+      "commit": {
+        "README.md": "atlas\n"
+      }
+    }
+  ],
+  "config_dir": "alt-config",
+  "files": {
+    "alt-config/.claude.json": {
+      "mcpServers": {
+        "relocated": {}
+      }
+    },
+    "home/.claude.json": {
+      "mcpServers": {
+        "ignored": {}
+      }
+    },
+    "alt-config/kodflow/sessions/parity-session-0003/tasks.json": {
+      "version": 2,
+      "epics": [
+        {
+          "id": 1,
+          "agent": "main",
+          "title": "relocated",
+          "touched": 1
+        }
+      ],
+      "active": {
+        "main": 1
+      },
+      "tasks": [
+        {
+          "id": "1",
+          "agent": "main",
+          "epic": 1,
+          "subject": "here",
+          "status": "pending"
+        }
+      ]
+    }
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

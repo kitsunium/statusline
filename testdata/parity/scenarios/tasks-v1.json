@@ -1,0 +1,74 @@
+{
+  "description": "A v1 tasks file (epics as a dict agent to current epic) is converted on read.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}/work/atlas"
+    },
+    "context_window": {
+      "used_percentage": 20,
+      "context_window_size": 200000
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 20,
+        "resets_at": "{{epoch:+12000}}"
+      }
+    },
+    "effort": {
+      "level": "high"
+    },
+    "session_id": "parity-session-0003",
+    "transcript_path": "{{home}}/.claude/projects/-work-atlas/parity-session-0003.jsonl"
+  },
+  "repos": [
+    {
+      "dir": "home/work/atlas",
+      "branch": "main",
+      "commit": {
+        "README.md": "atlas\n"
+      }
+    }
+  ],
+  "files": {
+    "home/.claude/kodflow/sessions/parity-session-0003/tasks.json": {
+      "epics": {
+        "main": {
+          "id": 2,
+          "title": "SDK"
+        },
+        "helper": {
+          "id": 3,
+          "title": "theirs"
+        }
+      },
+      "tasks": [
+        {
+          "id": "1",
+          "agent": "main",
+          "epic": 2,
+          "subject": "port",
+          "status": "in_progress"
+        },
+        {
+          "id": "2",
+          "agent": "main",
+          "epic": 2,
+          "subject": "test",
+          "status": "pending"
+        },
+        {
+          "id": "4",
+          "agent": "main",
+          "subject": "before epics",
+          "status": "pending"
+        }
+      ]
+    }
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

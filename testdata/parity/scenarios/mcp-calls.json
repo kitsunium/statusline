@@ -1,0 +1,199 @@
+{
+  "description": "MCP calls read from the transcripts: one in flight, one returned 1 s ago (lit), one returned 30 s ago (dark), one waiting for 66 min (lost), and a subagent calling a server no configuration names (added, lit).",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}/work/atlas"
+    },
+    "context_window": {
+      "used_percentage": 20,
+      "context_window_size": 200000
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 20,
+        "resets_at": "{{epoch:+12000}}"
+      }
+    },
+    "effort": {
+      "level": "high"
+    },
+    "session_id": "parity-session-0003",
+    "transcript_path": "{{home}}/.claude/projects/-work-atlas/parity-session-0003.jsonl"
+  },
+  "repos": [
+    {
+      "dir": "home/work/atlas",
+      "branch": "main",
+      "commit": {
+        "README.md": "atlas\n"
+      }
+    }
+  ],
+  "files": {
+    "home/.claude.json": {
+      "mcpServers": {
+        "github": {},
+        "gitlab": {},
+        "context7": {}
+      }
+    },
+    "home/.claude/settings.json": {
+      "enabledPlugins": {
+        "tasks-plugin@synthetic-market": true
+      }
+    },
+    "home/.claude/plugins/installed_plugins.json": {
+      "plugins": {
+        "tasks-plugin@synthetic-market": [
+          {
+            "installPath": "{{home}}/.claude/plugins/cache/tasks-plugin"
+          }
+        ]
+      }
+    },
+    "home/.claude/plugins/cache/tasks-plugin/.mcp.json": {
+      "mcpServers": {
+        "tasks": {}
+      }
+    },
+    "home/.claude/projects/-work-atlas/parity-session-0003.jsonl": [
+      {
+        "type": "assistant",
+        "timestamp": "{{rfc3339:-5}}",
+        "message": {
+          "content": [
+            {
+              "type": "tool_use",
+              "id": "toolu_p1",
+              "name": "mcp__github__list_issues",
+              "input": {}
+            }
+          ]
+        }
+      },
+      {
+        "type": "assistant",
+        "timestamp": "{{rfc3339:-4}}",
+        "message": {
+          "content": [
+            {
+              "type": "tool_use",
+              "id": "toolu_p2",
+              "name": "mcp__plugin_tasks-plugin_tasks__create",
+              "input": {}
+            }
+          ]
+        }
+      },
+      {
+        "type": "user",
+        "timestamp": "{{rfc3339:-1}}",
+        "message": {
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_p2",
+              "content": "ok"
+            }
+          ]
+        }
+      },
+      {
+        "type": "assistant",
+        "timestamp": "{{rfc3339:-3}}",
+        "message": {
+          "content": [
+            {
+              "type": "tool_use",
+              "id": "toolu_p3",
+              "name": "mcp__gitlab__get",
+              "input": {}
+            }
+          ]
+        }
+      },
+      {
+        "type": "user",
+        "timestamp": "{{rfc3339:-30}}",
+        "message": {
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_p3",
+              "content": "ok"
+            }
+          ]
+        }
+      },
+      {
+        "type": "assistant",
+        "timestamp": "{{rfc3339:-4000}}",
+        "message": {
+          "content": [
+            {
+              "type": "tool_use",
+              "id": "toolu_p4",
+              "name": "mcp__context7__query",
+              "input": {}
+            }
+          ]
+        }
+      }
+    ],
+    "home/.claude/projects/-work-atlas/parity-session-0003/subagents/agent-a1.jsonl": [
+      {
+        "type": "assistant",
+        "timestamp": "{{rfc3339:-2}}",
+        "message": {
+          "content": [
+            {
+              "type": "tool_use",
+              "id": "toolu_s1",
+              "name": "mcp__unknown.server__x",
+              "input": {}
+            }
+          ]
+        }
+      }
+    ],
+    "home/.claude/kodflow/sessions/parity-session-0003/agents.json": {
+      "agents": {
+        "a1": {
+          "started": "{{epoch:-60}}"
+        },
+        "../evil": {
+          "started": "{{epoch:-60}}"
+        }
+      }
+    }
+  },
+  "variants": [
+    {
+      "name": "default"
+    },
+    {
+      "name": "mcp-line-2",
+      "env": {
+        "STATUSLINE_MCP_LINE": "2"
+      }
+    },
+    {
+      "name": "glyphs-text",
+      "env": {
+        "STATUSLINE_GLYPHS": "text"
+      }
+    },
+    {
+      "name": "colors-256",
+      "env": {
+        "STATUSLINE_COLORS": "256"
+      }
+    }
+  ],
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

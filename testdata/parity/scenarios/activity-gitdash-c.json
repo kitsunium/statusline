@@ -1,0 +1,68 @@
+{
+  "description": "git -C <dir> names the location too.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}/work/atlas"
+    },
+    "context_window": {
+      "used_percentage": 20,
+      "context_window_size": 200000
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 20,
+        "resets_at": "{{epoch:+12000}}"
+      }
+    },
+    "effort": {
+      "level": "high"
+    },
+    "session_id": "parity-session-0003",
+    "transcript_path": "{{home}}/.claude/projects/-work-atlas/parity-session-0003.jsonl"
+  },
+  "repos": [
+    {
+      "dir": "home/work/atlas",
+      "branch": "main",
+      "commit": {
+        "README.md": "atlas\n"
+      }
+    },
+    {
+      "dir": "home/work/other",
+      "branch": "fix/other",
+      "commit": {
+        "x.txt": "x\n"
+      }
+    }
+  ],
+  "files": {
+    "home/.claude/projects/-work-atlas/parity-session-0003.jsonl": [
+      {
+        "type": "assistant",
+        "message": {
+          "content": [
+            {
+              "type": "text",
+              "text": "hi"
+            },
+            {
+              "type": "tool_use",
+              "id": "t1",
+              "name": "Bash",
+              "input": {
+                "command": "git -C {{home}}/work/other status"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

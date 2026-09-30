@@ -1,0 +1,40 @@
+# Written by kit gen: the design digest the generated files come from.
+apiVersion: kit.kitsunium/design/v1
+digest: sha256:2fe8d86cbae61dd09910f21ff1088719bef537ae1defa6374bdd41ff060206d8
+files:
+  - cmd/statusline/client/wire_gen.go
+  - cmd/statusline/daemon/wire_gen.go
+  - cmd/statusline/main_gen.go
+  - collect/collector/design_gen.go
+  - collect/collector/design_gen_test.go
+  - collect/credentials/design_gen.go
+  - collect/daemon/design_gen.go
+  - collect/gitcli/design_gen.go
+  - collect/mcpconfig/design_gen.go
+  - collect/releases/design_gen.go
+  - collect/sessioncache/design_gen.go
+  - collect/sessions/design_gen.go
+  - collect/state/design_gen.go
+  - collect/state/design_gen_test.go
+  - collect/statefile/design_gen.go
+  - collect/statuspage/design_gen.go
+  - collect/sysinfo/design_gen.go
+  - collect/taskstore/design_gen.go
+  - collect/transcripts/design_gen.go
+  - collect/usageapi/design_gen.go
+  - collect/wallclock/design_gen.go
+  - ipc/design_gen.go
+  - ipc/design_gen_test.go
+  - quota/design_gen.go
+  - quota/design_gen_test.go
+  - render/cli/design_gen.go
+  - render/daemonlink/design_gen.go
+  - render/powerline/design_gen.go
+  - render/powerline/design_gen_test.go
+  - render/session/design_gen.go
+  - render/session/design_gen_test.go
+  - render/show/design_gen.go
+  - render/show/design_gen_test.go
+  - render/systemclock/design_gen.go
+  - snapshot/design_gen.go
+  - snapshot/design_gen_test.go

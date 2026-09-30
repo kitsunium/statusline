@@ -1,0 +1,19 @@
+{
+  "description": "demo/widths -light: no scoped quota, branch main, a clean tree, no usage API payload at all.",
+  "env": {"COLORTERM": "truecolor"},
+  "stdin": {
+    "model": {"display_name": "Sonnet 5"},
+    "workspace": {"current_dir": "{{home}}/work/atlas"},
+    "context_window": {"context_window_size": 1000000, "used_percentage": 10, "total_input_tokens": 100000, "total_output_tokens": 3000},
+    "rate_limits": {"five_hour": {"used_percentage": 15, "resets_at": "{{epoch:+9990}}"}},
+    "effort": {"level": "medium"},
+    "session_id": "parity-session-0002"
+  },
+  "repos": [{"dir": "home/work/atlas", "branch": "main", "commit": {"README.md": "atlas\n"}}],
+  "variants": [
+    {"name": "default"},
+    {"name": "cols-200", "env": {"COLUMNS": "200"}},
+    {"name": "cols-80", "env": {"COLUMNS": "80"}},
+    {"name": "cols-60", "env": {"COLUMNS": "60"}}
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "description": "Project servers from the undotted mcp.json when .mcp.json is absent; disabledMcpjsonServers rejects one; a malformed global file is ignored in favour of ~/.claude/.claude.json.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}/work/atlas"
+    },
+    "context_window": {
+      "used_percentage": 20,
+      "context_window_size": 200000
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 20,
+        "resets_at": "{{epoch:+12000}}"
+      }
+    },
+    "effort": {
+      "level": "high"
+    },
+    "session_id": "parity-session-0003",
+    "transcript_path": "{{home}}/.claude/projects/-work-atlas/parity-session-0003.jsonl"
+  },
+  "repos": [
+    {
+      "dir": "home/work/atlas",
+      "branch": "main",
+      "commit": {
+        "README.md": "atlas\n"
+      }
+    }
+  ],
+  "files": {
+    "home/.claude.json": "{broken",
+    "home/.claude/.claude.json": {
+      "mcpServers": {
+        "fallback-user": {}
+      },
+      "projects": {
+        "{{home}}/work/atlas": {
+          "disabledMcpjsonServers": [
+            "p2"
+          ]
+        }
+      }
+    },
+    "home/work/atlas/mcp.json": {
+      "mcpServers": {
+        "p1": {},
+        "p2": {}
+      }
+    }
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

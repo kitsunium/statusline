@@ -1,0 +1,7 @@
+{"page": {"name": "Synthetic"}, "components": [
+  {"name": "claude.ai", "status": "degraded_performance"},
+  {"name": "Claude API", "status": "under_maintenance"},
+  {"name": "CLI", "status": "operational"},
+  {"name": "Claude for Government", "status": "major_outage"},
+  {"name": "Group", "status": "major_outage", "group": true}
+]}

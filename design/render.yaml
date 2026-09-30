@@ -1,0 +1,202 @@
+# The client role: the host's payload and the daemon's snapshot drawn as two
+# lines, on every redraw, without ever waiting on the network.
+apiVersion: kit.kitsunium/design/v1
+domains:
+  - name: render
+    description: One redraw, from stdin to stdout.
+    components:
+      - name: session
+        role: domain
+        code: 64.2.1
+        uses: [quota]
+        description: The host's stdin payload and what it says about the session.
+        constants:
+          - {name: EffortLow, type: string, value: '"low"'}
+          - {name: EffortMedium, type: string, value: '"medium"'}
+          - {name: EffortHigh, type: string, value: '"high"'}
+          - {name: EffortXHigh, type: string, value: '"xhigh"'}
+          - {name: EffortMax, type: string, value: '"max"'}
+        values:
+          - name: Payload
+            description: The JSON the host pipes on stdin. Every field the host sends is declared with its type, so that a mistyped field is refused as the legacy product refused it.
+            receiver: pointer
+            fields:
+              - {name: Model, type: PayloadModel, tag: 'json:"model"'}
+              - {name: Workspace, type: PayloadWorkspace, tag: 'json:"workspace"'}
+              - {name: ContextWindow, type: PayloadContext, tag: 'json:"context_window"'}
+              - {name: Cost, type: PayloadCost, tag: 'json:"cost"'}
+              - {name: RateLimits, type: PayloadRateLimits, tag: 'json:"rate_limits"'}
+              - {name: Effort, type: PayloadEffort, tag: 'json:"effort"'}
+              - {name: Thinking, type: PayloadThinking, tag: 'json:"thinking"'}
+              - {name: OutputStyle, type: PayloadStyle, tag: 'json:"output_style"'}
+              - {name: SessionName, type: string, tag: 'json:"session_name"'}
+              - {name: Transcript, type: string, tag: 'json:"transcript_path"'}
+              - {name: SessionID, type: string, tag: 'json:"session_id"'}
+              - {name: Version, type: string, tag: 'json:"version"'}
+              - {name: FastMode, type: bool, tag: 'json:"fast_mode"'}
+              - {name: Exceeds200k, type: bool, tag: 'json:"exceeds_200k_tokens"'}
+            methods:
+              - {name: ModelInfo, results: [{type: ModelInfo}], properties: [DefaultName]}
+              - {name: WorkingDir, results: [{type: string}], properties: [NeverEmpty]}
+              - {name: ContextWindowSize, results: [{type: int}], properties: [Positive]}
+              - {name: TotalTokens, results: [{type: int}], properties: [Sum]}
+              - {name: Progress, results: [{type: quota.Progress}], properties: [Bounded]}
+              - {name: StdinLimits, results: [{type: quota.Set}], properties: [ContextAlways]}
+          - {name: PayloadModel, fields: [{name: DisplayName, type: string, tag: 'json:"display_name"'}, {name: ID, type: string, tag: 'json:"id"'}]}
+          - {name: PayloadWorkspace, fields: [{name: CurrentDir, type: string, tag: 'json:"current_dir"'}, {name: ProjectDir, type: string, tag: 'json:"project_dir"'}]}
+          - name: PayloadContext
+            fields:
+              - {name: CurrentUsage, type: PayloadUsage, tag: 'json:"current_usage"'}
+              - {name: TotalInputTokens, type: int, tag: 'json:"total_input_tokens"'}
+              - {name: TotalOutputTokens, type: int, tag: 'json:"total_output_tokens"'}
+              - {name: ContextWindowSize, type: int, tag: 'json:"context_window_size"'}
+              - {name: UsedPercentage, type: "*float64", tag: 'json:"used_percentage"'}
+              - {name: RemainingPercentage, type: "*float64", tag: 'json:"remaining_percentage"'}
+          - name: PayloadUsage
+            fields:
+              - {name: InputTokens, type: int, tag: 'json:"input_tokens"'}
+              - {name: OutputTokens, type: int, tag: 'json:"output_tokens"'}
+              - {name: CacheCreationInputTokens, type: int, tag: 'json:"cache_creation_input_tokens"'}
+              - {name: CacheReadInputTokens, type: int, tag: 'json:"cache_read_input_tokens"'}
+          - name: PayloadCost
+            fields:
+              - {name: TotalCostUSD, type: float64, tag: 'json:"total_cost_usd"'}
+              - {name: TotalDurationMs, type: int64, tag: 'json:"total_duration_ms"'}
+              - {name: TotalAPIDurationMs, type: int64, tag: 'json:"total_api_duration_ms"'}
+              - {name: TotalLinesAdded, type: int, tag: 'json:"total_lines_added"'}
+              - {name: TotalLinesRemoved, type: int, tag: 'json:"total_lines_removed"'}
+          - {name: PayloadRateLimits, fields: [{name: FiveHour, type: "*PayloadRateLimit", tag: 'json:"five_hour"'}, {name: SevenDay, type: "*PayloadRateLimit", tag: 'json:"seven_day"'}]}
+          - name: PayloadRateLimit
+            receiver: pointer
+            fields:
+              - {name: UsedPercentage, type: "*float64", tag: 'json:"used_percentage"'}
+              - {name: Utilization, type: "*float64", tag: 'json:"utilization"'}
+              - {name: ResetsAt, type: quota.Timestamp, tag: 'json:"resets_at"'}
+            methods:
+              - {name: Percent, results: [{type: int}, {type: bool}], properties: [PrefersUsed]}
+          - {name: PayloadEffort, fields: [{name: Level, type: string, tag: 'json:"level"'}]}
+          - {name: PayloadThinking, fields: [{name: Enabled, type: bool, tag: 'json:"enabled"'}]}
+          - {name: PayloadStyle, fields: [{name: Name, type: string, tag: 'json:"name"'}]}
+          - name: ModelInfo
+            fields: [{name: Name, type: string}, {name: Version, type: string}]
+            methods:
+              - {name: FullName, results: [{type: string}], properties: [StartsWithName]}
+              - {name: ShortName, results: [{type: string}], properties: [PrefixOfFull]}
+        functions:
+          - {name: Parse, description: "Parse never fails — invalid JSON is the zero Payload, a mistyped field leaves the fields decoded around it.", params: [{name: data, type: "[]byte"}], results: [{type: Payload}], properties: [Total]}
+          - {name: EffortRank, params: [{name: level, type: string}], results: [{type: int}, {type: bool}], properties: [Scale]}
+          - {name: EffortSteps, results: [{type: int}], properties: [MatchesScale]}
+
+      - name: powerline
+        role: library
+        code: 64.2.2
+        uses: [quota, snapshot, session]
+        description: The Powerline renderer — segments, palette, glyphs, visible width, the condensing of line one. Its display variables are read by its body, once per process.
+        evidence: [condense-policy, palette-contrast]
+        values:
+          - name: Icons
+            fields: [{name: OS, type: bool}, {name: Path, type: bool}, {name: Git, type: bool}, {name: Model, type: bool}]
+          - name: Frame
+            description: Everything one render draws; Now is the instant countdowns, burn cursors and the task pulse are drawn at.
+            fields:
+              - {name: Model, type: session.ModelInfo}
+              - {name: Effort, type: string}
+              - {name: FastMode, type: bool}
+              - {name: SessionName, type: string}
+              - {name: Cost, type: float64}
+              - {name: Limits, type: quota.Set}
+              - {name: Icons, type: Icons}
+              - {name: Width, type: int}
+              - {name: Dir, type: string}
+              - {name: Git, type: snapshot.GitStatus}
+              - {name: Changes, type: snapshot.Changes}
+              - {name: System, type: snapshot.System}
+              - {name: MCP, type: snapshot.MCPServers}
+              - {name: Health, type: snapshot.Health}
+              - {name: Tasks, type: snapshot.TaskBoard}
+              - {name: Working, type: bool}
+              - {name: Update, type: snapshot.UpdateNotice}
+              - {name: Now, type: time.Time}
+        functions:
+          - {name: Render, params: [{name: frame, type: Frame}], results: [{type: string}], properties: [TwoLines, LineOneFits]}
+          - {name: Condensed, params: [{name: frame, type: Frame}], results: [{type: "[]string"}], properties: [Monotonic]}
+          - {name: VisibleWidth, params: [{name: s, type: string}], results: [{type: int}], properties: [IgnoresEscapes, Additive]}
+          - {name: ParseWidth, params: [{name: value, type: string}], results: [{type: int}], properties: [Bounded]}
+          - {name: IconsFromEnv, params: [{name: env, type: "map[string]string"}], results: [{type: Icons}], properties: [OnlyNegativesSwitchOff]}
+
+      - name: show
+        role: application
+        code: 64.2.3
+        uses: [quota, snapshot, ipc, session, powerline]
+        description: One redraw.
+        constants:
+          - {name: OriginDaemon, type: string, value: '"daemon"'}
+          - {name: OriginCache, type: string, value: '"cache"'}
+          - {name: OriginNone, type: string, value: '"none"'}
+        ports:
+          - name: SnapshotSource
+            direction: out
+            version: 1
+            description: SnapshotSourceV1 gives a session's snapshot and where it came from (Origin*).
+            methods:
+              - {name: Snapshot, params: [{name: key, type: ipc.Key}], results: [{type: snapshot.Snapshot}, {type: string}]}
+          - name: Clock
+            direction: out
+            version: 1
+            methods:
+              - {name: Now, results: [{type: time.Time}]}
+        usecases:
+          - name: ShowStatusLine
+            description: The host's payload keyed as the daemon keeps it, the snapshot drawn at the clock's instant, stdin's quotas winning.
+            input:
+              - {name: Stdin, type: "[]byte"}
+              - {name: Env, type: "map[string]string"}
+            output:
+              - {name: Line, type: string}
+              - {name: Origin, type: string}
+            calls: [render/port/SnapshotSource@v1.Snapshot, render/port/Clock@v1.Now]
+            properties: [Total]
+            scenarios:
+              - {name: draws the daemons snapshot with stdin winning, kind: success}
+              - {name: draws from stdin alone when nothing is known, kind: success}
+
+      - name: cli
+        role: presentation
+        code: 64.2.4
+        uses: [show, ipc]
+        description: "The client role's command, the default and fail-safe one: this process is the host's prompt line, it never fails and never writes a word of its own on stderr."
+        clis:
+          - name: line
+            doc: prints the two lines of the status line
+            handler: Line
+            default: true
+            failSafe: true
+            uses: [render/usecase/ShowStatusLine, "build:version"]
+            calls: [render/usecase/ShowStatusLine]
+
+      - name: daemonlink
+        role: adapter
+        code: 64.2.5
+        uses: [show, ipc, snapshot]
+        description: The client's side of the contract. Dials under a 250 ms budget; no daemon, an older one (asked to stop) or a mute one (stale heartbeat, killed) → the key's cache and a daemon started with os.Executable(). Never stops a newer daemon.
+        evidence: [one-binary-two-processes]
+        adapters:
+          - name: Link
+            implements: [render/port/SnapshotSource@v1]
+            uses: ["build:version"]
+
+      - name: systemclock
+        role: adapter
+        code: 64.2.6
+        uses: [show]
+        adapters:
+          - name: Clock
+            implements: [render/port/Clock@v1]
+
+    sequences:
+      - name: render-warm
+        description: One redraw — the snapshot asked, then the frame drawn at the clock's instant.
+        start: render/usecase/ShowStatusLine
+        steps:
+          - call: render/port/SnapshotSource@v1.Snapshot
+          - call: render/port/Clock@v1.Now

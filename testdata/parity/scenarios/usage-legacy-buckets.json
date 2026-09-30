@@ -1,0 +1,31 @@
+{
+  "description": "An API payload with only the legacy five_hour / seven_day buckets (no limits[]): they are the fallback.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}"
+    },
+    "context_window": {
+      "used_percentage": 30
+    }
+  },
+  "credentials": true,
+  "usage": {
+    "five_hour": {
+      "utilization": 55,
+      "resets_at": "{{rfc3339:+4000}}"
+    },
+    "seven_day": {
+      "utilization": 20,
+      "resets_at": "{{rfc3339:+200000}}"
+    },
+    "extra_usage": {
+      "is_enabled": false
+    }
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

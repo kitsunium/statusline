@@ -1,0 +1,12 @@
+{
+  "binary": "statusline",
+  "flavour": "kit",
+  "scenario": "degrade-empty-stdin/default",
+  "runs": 300,
+  "p50_ms": 7.095,
+  "p95_ms": 18.257,
+  "p99_ms": 31.157,
+  "max_ms": 40.761,
+  "host": "Intel(R) Core(TM) i5-3210M CPU @ 2.50GHz",
+  "measured": "2026-09-28"
+}

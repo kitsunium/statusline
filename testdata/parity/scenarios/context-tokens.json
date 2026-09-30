@@ -1,0 +1,23 @@
+{
+  "description": "No used_percentage: the context percentage is computed from token totals, capped at 100.",
+  "stdin": {
+    "model": {
+      "display_name": "Haiku 4.5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}"
+    },
+    "context_window": {
+      "total_input_tokens": 250000,
+      "total_output_tokens": 1000,
+      "context_window_size": 200000
+    },
+    "exceeds_200k_tokens": true,
+    "cost": {
+      "total_cost_usd": 12.5
+    }
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

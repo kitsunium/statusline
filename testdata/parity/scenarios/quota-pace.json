@@ -1,0 +1,59 @@
+{
+  "description": "Burn-rate arithmetic: session far ahead of an even burn (projection past 100 %, exhaustion before reset), weekly behind, a reset instant already past, a percentage over 100 and a negative one clamped.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}"
+    },
+    "context_window": {
+      "used_percentage": 30
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 90,
+        "resets_at": "{{epoch:+14400}}"
+      },
+      "seven_day": {
+        "used_percentage": 140,
+        "resets_at": "{{epoch:-60}}"
+      }
+    }
+  },
+  "credentials": true,
+  "usage": {
+    "limits": [
+      {
+        "kind": "weekly_scoped",
+        "percent": -5,
+        "resets_at": "{{rfc3339:+500000}}",
+        "scope": {
+          "model": {
+            "display_name": "Opus"
+          }
+        }
+      }
+    ]
+  },
+  "variants": [
+    {
+      "name": "default"
+    },
+    {
+      "name": "cols-200",
+      "env": {
+        "COLUMNS": "200"
+      }
+    },
+    {
+      "name": "glyphs-text",
+      "env": {
+        "STATUSLINE_GLYPHS": "text"
+      }
+    }
+  ],
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}

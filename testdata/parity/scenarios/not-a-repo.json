@@ -1,0 +1,32 @@
+{
+  "description": "A working directory outside any repository: no git segment, no changes.",
+  "stdin": {
+    "model": {
+      "display_name": "Opus 5"
+    },
+    "workspace": {
+      "current_dir": "{{home}}/scratch"
+    },
+    "context_window": {
+      "used_percentage": 20,
+      "context_window_size": 200000
+    },
+    "rate_limits": {
+      "five_hour": {
+        "used_percentage": 20,
+        "resets_at": "{{epoch:+12000}}"
+      }
+    },
+    "effort": {
+      "level": "high"
+    },
+    "session_id": "parity-session-0003",
+    "transcript_path": ""
+  },
+  "files": {
+    "home/scratch/file.txt": "x"
+  },
+  "env": {
+    "COLORTERM": "truecolor"
+  }
+}
