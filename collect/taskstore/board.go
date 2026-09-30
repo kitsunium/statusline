@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/kitsunium/statusline/snapshot"
@@ -30,8 +31,10 @@ const (
 	staleAgent time.Duration = 12 * time.Hour
 )
 
-// unsafeID matches the characters replaced in a list or session directory name.
-var unsafeID = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
+// unsafeID matches the characters replaced in a list or session directory
+// name. Compiled on first use: the client links this package but never runs
+// it.
+var unsafeID = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`[^a-zA-Z0-9_-]`) })
 
 // sessionBoard reads the task list of one session from two places.
 //
@@ -114,14 +117,14 @@ func newBoard(sessionID, listID string, now time.Time) *sessionBoard {
 	p := &sessionBoard{now: clock}
 	// The kodflow stores are keyed by the whole session id
 	if sessionID != "" {
-		p.sessionDir = filepath.Join(base, "kodflow", "sessions", unsafeID.ReplaceAllString(sessionID, "-"))
+		p.sessionDir = filepath.Join(base, "kodflow", "sessions", unsafeID().ReplaceAllString(sessionID, "-"))
 	}
 	// The built-in list falls back to a per-session id
 	if listID == "" && sessionID != "" {
 		listID = sessionPrefix + sessionID[:min(sessionIDLen, len(sessionID))]
 	}
 	if listID != "" {
-		p.builtinDir = filepath.Join(base, "tasks", unsafeID.ReplaceAllString(listID, "-"))
+		p.builtinDir = filepath.Join(base, "tasks", unsafeID().ReplaceAllString(listID, "-"))
 	}
 	return p
 }

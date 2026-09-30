@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 // Transcript scanning constants.
@@ -21,10 +22,15 @@ const (
 )
 
 // cdPattern matches a command that starts by changing directory, and
-// gitDirPattern a git invocation aimed at another work tree.
+// gitDirPattern a git invocation aimed at another work tree. Compiled on
+// first use: the client links this package but never runs it.
 var (
-	cdPattern     = regexp.MustCompile(`^\s*cd\s+("[^"]+"|'[^']+'|[^\s;&|]+)`)
-	gitDirPattern = regexp.MustCompile(`(?:^|[\s;&|])git\s+-C\s+("[^"]+"|'[^']+'|[^\s;&|]+)`)
+	cdPattern = sync.OnceValue(func() *regexp.Regexp {
+		return regexp.MustCompile(`^\s*cd\s+("[^"]+"|'[^']+'|[^\s;&|]+)`)
+	})
+	gitDirPattern = sync.OnceValue(func() *regexp.Regexp {
+		return regexp.MustCompile(`(?:^|[\s;&|])git\s+-C\s+("[^"]+"|'[^']+'|[^\s;&|]+)`)
+	})
 )
 
 // dirEntry is the part of a transcript line this package reads.
@@ -151,11 +157,11 @@ func candidates(in toolInput) []string {
 		}
 	}
 	// A shell command names its location by changing into it
-	if m := cdPattern.FindStringSubmatch(in.Command); m != nil {
+	if m := cdPattern().FindStringSubmatch(in.Command); m != nil {
 		paths = append(paths, unquote(m[1]))
 	}
 	// Or by pointing git at another work tree
-	if m := gitDirPattern.FindStringSubmatch(in.Command); m != nil {
+	if m := gitDirPattern().FindStringSubmatch(in.Command); m != nil {
 		paths = append(paths, unquote(m[1]))
 	}
 	return paths
