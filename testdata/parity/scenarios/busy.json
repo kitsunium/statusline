@@ -24,8 +24,8 @@
   }],
   "files": {
     "home/.claude.json": {
-      "mcpServers": {"github": {}, "gitlab": {}, "context7": {}, "playwright": {}, "codacy": {}, "legacy": {"disabled": true}},
-      "projects": {"{{home}}/work/worktrees/atlas-adaptive-line": {"mcpServers": {"notes": {}}, "disabledMcpServers": ["codacy"]}}
+      "mcpServers": {"github": {}, "gitlab": {}, "context7": {}, "playwright": {}, "clangd": {}, "legacy": {"disabled": true}},
+      "projects": {"{{home}}/work/worktrees/atlas-adaptive-line": {"mcpServers": {"notes": {}}, "disabledMcpServers": ["clangd"]}}
     },
     "home/work/worktrees/atlas-adaptive-line/.mcp.json": {"mcpServers": {"docs-search": {}}},
     "home/.claude/settings.json": {"enabledPlugins": {"tasks-plugin@synthetic-market": true, "off-plugin@synthetic-market": false}},
