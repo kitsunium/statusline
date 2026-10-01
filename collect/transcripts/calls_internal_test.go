@@ -148,10 +148,10 @@ func TestBusyIgnoresNoise(t *testing.T) {
 			lines: func(t *testing.T) []string {
 				return []string{
 					use(t, "a", "mcp__github__x", -time.Minute), use(t, "b", "mcp__context7__y", -time.Minute),
-					result(t, "a", -50*time.Second), use(t, "c", "mcp__codacy__z", -time.Second),
+					result(t, "a", -50*time.Second), use(t, "c", "mcp__clangd__z", -time.Second),
 				}
 			},
-			want: "codacy,context7",
+			want: "clangd,context7",
 		},
 	})
 }
