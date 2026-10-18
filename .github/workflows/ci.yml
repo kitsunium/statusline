@@ -90,7 +90,10 @@ jobs:
       contents: read
       actions: read
     env:
-      GOPRIVATE: github.com/kitsunium/*
+      # Only the tool's repository is private. The SDK is public and comes
+      # from the module proxy: listing it here would force a direct VCS read
+      # that the environment kit runs go in cannot do (no git).
+      GOPRIVATE: github.com/kitsunium/platform
       KIT_VERSION: v0.1.0-rc.12
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
