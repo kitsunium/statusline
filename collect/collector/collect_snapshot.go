@@ -1,6 +1,6 @@
-// Written once by kit gen, never again: this file is yours. The shells in
-// design_gen.go delegate to what it holds; kit check reads a body that still
-// answers errNotImplemented as a stub.
+// Written once from the design; this file is yours. The shells in
+// design_gen.go delegate to what it holds; a body that still answers
+// errNotImplemented is a stub.
 
 package collector
 
@@ -16,7 +16,7 @@ import (
 // execute serves the cache's snapshot while it is fresh; otherwise it
 // collects, keeps and caches a new one. Every request counts against the
 // key's eviction. A source that fails costs only its own part of the line.
-func (h *CollectSnapshotHandler) execute(ctx context.Context, in CollectSnapshotInput) (CollectSnapshotOutput, error) {
+func (h *CollectSnapshotHandler) execute(ctx context.Context, in *CollectSnapshotInput) (CollectSnapshotOutput, error) {
 	now, err := h.clock.Now(ctx)
 	if err != nil {
 		return CollectSnapshotOutput{}, err
@@ -25,7 +25,7 @@ func (h *CollectSnapshotHandler) execute(ctx context.Context, in CollectSnapshot
 	if snap, ok, err := h.sessionCache.Get(ctx, in.Key, now); err == nil && ok {
 		return CollectSnapshotOutput{Snapshot: snap}, nil
 	}
-	snap := h.collect(ctx, in, now)
+	snap := h.collect(ctx, *in, now)
 	snap.CollectedAt = now
 	_ = h.sessionCache.Put(ctx, in.Key, snap, now)
 	// A cache write failure only costs the next cold render

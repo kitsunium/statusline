@@ -1,6 +1,6 @@
-// Written once by kit gen, never again: this file is yours. The shells in
-// design_gen.go delegate to what it holds; kit check reads a body that still
-// answers errNotImplemented as a stub.
+// Written once from the design; this file is yours. The shells in
+// design_gen.go delegate to what it holds; a body that still answers
+// errNotImplemented is a stub.
 
 package collector
 
@@ -16,7 +16,7 @@ import (
 )
 
 // execute never elevates and never retries a version that failed its probe.
-func (h *CheckUpdateHandler) execute(ctx context.Context, in CheckUpdateInput) (CheckUpdateOutput, error) {
+func (h *CheckUpdateHandler) execute(ctx context.Context, in *CheckUpdateInput) (CheckUpdateOutput, error) {
 	// A development build has nothing to compare, and an opted-out one asks
 	// nothing of the network
 	if in.Disabled || ipc.CompareVersions(in.CurrentVersion, "v0.0.0") < 0 {

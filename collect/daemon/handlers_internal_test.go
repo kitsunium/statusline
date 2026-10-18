@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kitsunium/sdk/framework/kit"
-	sdkipc "github.com/kitsunium/sdk/pkg/v1/ipc"
+	"github.com/kitsunium/sdk/framework/app"
+	sdkipc "github.com/kitsunium/sdk/pkg/v1/proc/ipc"
 
 	"github.com/kitsunium/statusline/collect/collector"
 	"github.com/kitsunium/statusline/collect/sessioncache"
@@ -106,7 +106,7 @@ func serveOn(t *testing.T, inst ipc.Instance) {
 func TestServeAndTheCommands(t *testing.T) {
 	cache, r, inst := setup(t)
 	var out, errb bytes.Buffer
-	std := kit.Stdio{Out: &out, Err: &errb}
+	std := app.Stdio{Out: &out, Err: &errb}
 	if code := Status(context.Background(), nil, std); code != 1 || !strings.Contains(errb.String(), "no daemon") {
 		t.Errorf("status without a daemon = %d, %q", code, errb.String())
 	}

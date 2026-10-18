@@ -1,8 +1,8 @@
 package ipc
 
 import (
-	"github.com/kitsunium/sdk/framework/kit"
-	sdkipc "github.com/kitsunium/sdk/pkg/v1/ipc"
+	"github.com/kitsunium/sdk/framework/app"
+	sdkipc "github.com/kitsunium/sdk/pkg/v1/proc/ipc"
 )
 
 const (
@@ -14,16 +14,16 @@ const (
 
 // scopes are the daemon's singletonPer and socketPer (design/product.yaml,
 // collect.yaml), evaluated in this process.
-var scopes = []kit.Scope{kit.PerUID, kit.PerExecutable, kit.PerEnv("CLAUDE_CONFIG_DIR", "~/.claude")}
+var scopes = []app.Scope{app.PerUID, app.PerExecutable, app.PerEnv("CLAUDE_CONFIG_DIR", "~/.claude")}
 
 // here asks the framework for the key and the socket, so the client dials
 // the path the listener opened without importing its declaration.
 func here() (Instance, error) {
-	key, err := kit.ScopeKey(scopes...)
+	key, err := app.ScopeKey(scopes...)
 	if err != nil {
 		return Instance{}, err
 	}
-	socket, err := kit.SocketPathFor(product, daemon, daemon, scopes...)
+	socket, err := app.SocketPathFor(product, daemon, daemon, scopes...)
 	if err != nil {
 		return Instance{}, err
 	}

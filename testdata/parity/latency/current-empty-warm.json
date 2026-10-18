@@ -1,6 +1,6 @@
 {
   "binary": "statusline",
-  "flavour": "kit",
+  "flavour": "current",
   "scenario": "degrade-empty-stdin/default",
   "runs": 300,
   "p50_ms": 7.095,

@@ -42,7 +42,7 @@ pulsing in-progress task run at the start of an even wall-clock second.
 - `legacy` flavour: payloads are seeded as the legacy caches
   (`$XDG_RUNTIME_DIR/status-line-usage-<uid>/usage.json`,
   `status-line-health-<uid>/summary.json`) with the scenario's age.
-- `kit` flavour: payloads are served by a local HTTP endpoint the new binary
+- `current` flavour: payloads are served by a local HTTP endpoint the new binary
   is pointed at with `STATUSLINE_USAGE_URL` and `STATUSLINE_HEALTH_URL`; the
   harness renders until two consecutive lines agree (warm daemon), then runs
   `statusline daemon stop`.
@@ -69,10 +69,10 @@ go build -o /tmp/harness .
 /tmp/harness capture -bin <legacy status-line> -flavour legacy
 
 # check the new binary
-/tmp/harness check -bin <statusline> -flavour kit
+/tmp/harness check -bin <statusline> -flavour current
 
 # latency, process start to exit, after a warm-up run
-/tmp/harness latency -bin <binary> -flavour kit -runs 300 -scenario busy/default
+/tmp/harness latency -bin <binary> -flavour current -runs 300 -scenario busy/default
 
 # two binaries against each other: alternated rounds, load average beside
 # every measure, median of the p50s; nothing measured at a load of 3 or more

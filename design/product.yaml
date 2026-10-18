@@ -1,6 +1,10 @@
 # statusline: one executable, two process roles (D5, D22). The client is what
 # the host runs on every redraw; the daemon collects what is slow or shared.
-apiVersion: kit.kitsunium/design/v1
+apiVersion: design/v2
+project:
+  module: github.com/kitsunium/statusline
+  name: statusline
+  type: product
 product:
   name: statusline
   module: github.com/kitsunium/statusline

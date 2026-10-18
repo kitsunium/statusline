@@ -22,10 +22,10 @@ const (
 	// Legacy seeds the on-disk caches of kodflow/status-line: that binary
 	// renders from them and never fetches while they are fresh.
 	Legacy Flavour = "legacy"
-	// Kit serves the payloads over a local HTTP endpoint the new binary is
+	// Current serves the payloads over a local HTTP endpoint the new binary is
 	// pointed at (STATUSLINE_USAGE_URL, STATUSLINE_HEALTH_URL), and waits for
 	// its daemon to be warm before reading the line.
-	Kit Flavour = "kit"
+	Current Flavour = "current"
 )
 
 // syntheticToken is the OAuth token written for scenarios that need one.
@@ -90,8 +90,8 @@ func buildSandbox(s Scenario, flavour Flavour, now time.Time) (*Sandbox, error) 
 		}
 	}
 	// A cached usage payload means a token existed when it was fetched: the
-	// kit flavour, which fetches instead of reading a cache, needs that token
-	if s.Credentials || (flavour == Kit && len(s.Usage) > 0) {
+	// current flavour, which fetches instead of reading a cache, needs that token
+	if s.Credentials || (flavour == Current && len(s.Usage) > 0) {
 		cred := fmt.Sprintf(`{"claudeAiOauth":{"accessToken":%q}}`, syntheticToken)
 		dir := filepath.Join(sb.home, ".claude")
 		if err := os.MkdirAll(dir, 0o700); err != nil {
@@ -191,7 +191,7 @@ func (sb *Sandbox) network(s Scenario, now time.Time) error {
 			}
 		}
 		return nil
-	case Kit:
+	case Current:
 		usage, err := optionalJSON(sb.exp, s.Usage)
 		if err != nil {
 			return err

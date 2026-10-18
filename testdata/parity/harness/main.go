@@ -6,7 +6,7 @@
 // it with a closed environment, and records or compares what it printed.
 //
 //	harness capture -bin <legacy status-line> -flavour legacy
-//	harness check   -bin <statusline>         -flavour kit
+//	harness check   -bin <statusline>         -flavour current
 //	harness latency -bin <binary> -flavour legacy -runs 300
 //
 // The goldens were captured from kodflow/status-line at the commit named in
@@ -50,13 +50,13 @@ func main() {
 	cmd := os.Args[1]
 	fs := flag.NewFlagSet(cmd, flag.ExitOnError)
 	bin := fs.String("bin", "", "status line binary to run")
-	flavour := fs.String("flavour", string(Kit), "legacy | kit")
+	flavour := fs.String("flavour", string(Current), "legacy | current")
 	dir := fs.String("dir", "..", "parity directory (scenarios/, golden/)")
 	only := fs.String("only", "", "regexp on scenario/variant")
 	runs := fs.Int("runs", 300, "latency: runs per measure")
 	scenario := fs.String("scenario", "busy/default", "latency: scenario/variant measured")
 	out := fs.String("out", "", "latency: file written")
-	cold := fs.Bool("cold", false, "latency (kit): stop the daemon before every run, so each one renders from the cache")
+	cold := fs.Bool("cold", false, "latency (current): stop the daemon before every run, so each one renders from the cache")
 	_ = fs.Parse(os.Args[2:])
 	if *bin == "" {
 		usage()
@@ -86,7 +86,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: harness capture|check|latency -bin <binary> [-flavour legacy|kit] [-dir ..] [-only re]")
+	fmt.Fprintln(os.Stderr, "usage: harness capture|check|latency -bin <binary> [-flavour legacy|current] [-dir ..] [-only re]")
 	os.Exit(2)
 }
 
@@ -102,7 +102,7 @@ func render(bin string, flavour Flavour, s Scenario, v Variant) (Result, error) 
 		return Result{}, err
 	}
 	defer sb.Close()
-	if flavour == Kit {
+	if flavour == Current {
 		defer func() { _, _ = sb.run(bin, v, "daemon", "stop") }()
 		return warm(sb, bin, s, v)
 	}
@@ -242,7 +242,7 @@ func check(bin string, flavour Flavour, dir string, scenarios []Scenario, filter
 			if filter != nil && !filter.MatchString(id) {
 				continue
 			}
-			if flavour == Kit && s.Scope == "legacy-only" {
+			if flavour == Current && s.Scope == "legacy-only" {
 				skipped++
 				fmt.Printf("SKIP %-40s legacy-only: %s\n", id, s.Note)
 				continue
@@ -319,7 +319,7 @@ func latency(bin string, flavour Flavour, scenarios []Scenario, id string, runs 
 		fatal(err)
 	}
 	defer sb.Close()
-	if flavour == Kit {
+	if flavour == Current {
 		defer func() { _, _ = sb.run(bin, v, "daemon", "stop") }()
 		if _, err := warm(sb, bin, *s, v); err != nil {
 			fatal(err)
