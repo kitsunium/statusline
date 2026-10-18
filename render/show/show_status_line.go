@@ -1,6 +1,6 @@
-// Written once by kit gen, never again: this file is yours. The shells in
-// design_gen.go delegate to what it holds; kit check reads a body that still
-// answers errNotImplemented as a stub.
+// Written once from the design; this file is yours. The shells in
+// design_gen.go delegate to what it holds; a body that still answers
+// errNotImplemented is a stub.
 
 package show
 
@@ -18,7 +18,7 @@ import (
 // directory shown is where the session works (from its transcript), falling
 // back on the one the host reported. It never fails: a source that errs
 // leaves what stdin alone establishes.
-func (h *ShowStatusLineHandler) execute(ctx context.Context, in ShowStatusLineInput) (ShowStatusLineOutput, error) {
+func (h *ShowStatusLineHandler) execute(ctx context.Context, in *ShowStatusLineInput) (ShowStatusLineOutput, error) {
 	payload := session.Parse(in.Stdin)
 	key := ipc.Key{
 		SessionID:      payload.SessionID,

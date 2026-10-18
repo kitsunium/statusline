@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kitsunium/sdk/framework/kit"
+	"github.com/kitsunium/sdk/framework/app"
 
 	"github.com/kitsunium/statusline/ipc"
 	"github.com/kitsunium/statusline/render/show"
@@ -30,7 +30,7 @@ func (noDaemon) Snapshot(context.Context, ipc.Key) (snapshot.Snapshot, string, e
 func run(args []string, stdin, version string) (string, int) {
 	Wire(show.NewShowStatusLine(noDaemon{}, clock{}), version)
 	var out, errb bytes.Buffer
-	code := line(context.Background(), args, kit.Stdio{In: strings.NewReader(stdin), Out: &out, Err: &errb})
+	code := line(context.Background(), args, app.Stdio{In: strings.NewReader(stdin), Out: &out, Err: &errb})
 	return out.String() + errb.String(), code
 }
 

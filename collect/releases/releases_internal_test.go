@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kitsunium/sdk/pkg/v1/selfupdate"
+	"github.com/kitsunium/sdk/framework/selfupdate"
 
 	"github.com/kitsunium/statusline/collect/state"
 )

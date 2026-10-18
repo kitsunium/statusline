@@ -26,8 +26,8 @@ test:
 
 # The parity oracle: the new binary against the legacy goldens.
 parity: build
-	cd testdata/parity/harness && go run . check -bin ../../../$(BIN) -flavour kit
+	cd testdata/parity/harness && go run . check -bin ../../../$(BIN) -flavour current
 
 latency: build
-	cd testdata/parity/harness && go run . latency -bin ../../../$(BIN) -flavour kit -runs 300 -scenario busy/default
-	cd testdata/parity/harness && go run . latency -bin ../../../$(BIN) -flavour kit -cold -runs 100 -scenario busy/default
+	cd testdata/parity/harness && go run . latency -bin ../../../$(BIN) -flavour current -runs 300 -scenario busy/default
+	cd testdata/parity/harness && go run . latency -bin ../../../$(BIN) -flavour current -cold -runs 100 -scenario busy/default

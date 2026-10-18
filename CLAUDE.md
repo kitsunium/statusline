@@ -10,8 +10,9 @@ the only link.
 `design/` is law on the structure (ADR 0010 of platform): components,
 exported types and functions, use cases, ports, which component imports
 which, the links each body makes, the wiring of each process role. Bodies
-are free. `kit gen` (platform, version pinned by `kit.version`, read by the
-CI and by kit's own toolchain switch) writes
+are free. `kit gen` (platform; the version is pinned outside the product's
+files — `KIT_VERSION` in the CI, `kit pin vX.Y.Z` in this clone's git dir,
+platform ADR 0012 §8 — and read by kit's own toolchain switch) writes
 `*_gen.go` / `*_gen_test.go` — never edit them — and, once, the skeleton of
 each hand-written twin in `<name>.go` (a twin already declared elsewhere in
 the package is left alone). `kit gen -check`
@@ -57,7 +58,7 @@ docs/adr           decisions the design's evidence points to
 
 - Instance = (UID, CLAUDE_CONFIG_DIR or ~/.claude, executable path), under
   `$XDG_RUNTIME_DIR/statusline/`: the socket the framework names
-  (`daemon-daemon-<key>.sock`, `kit.SocketPathFor`), the SDK file lock in
+  (`daemon-daemon-<key>.sock`, `app.SocketPathFor`), the SDK file lock in
   `locks/`, and `statusline-<key>/` (0700): `daemon.pid`, `heartbeat`,
   `cache/<key>.json`, `state/{network,update}.json`, `daemon.log` (256 KiB,
   one rotation). The socket path must fit a sun_path (108 bytes): under a
@@ -95,9 +96,10 @@ docs/adr           decisions the design's evidence points to
   3 or more.
 - `kit harness install` writes the kit hooks into this clone's local
   settings and excludes them through `.git/info/exclude` (generated files
-  refused to Write/Edit, a digest check on Stop, each hook on the kit that
-  `kit.version` names); nothing of it is committed — the CI is the
-  authority (D7). Rerun it after bumping `kit.version`.
+  refused to Write/Edit, a digest check on Stop, each hook on the kit the
+  clone's pin names); nothing of it is committed — the CI is the
+  authority (D7). Rerun it after `kit pin` and after bumping the CI's
+  `KIT_VERSION`.
 - `kit test` judges regressions against the base branch's last report (the
   `kit-test-report` artifact of the ci run on main).
 - Test data is synthetic only: the repository is public.

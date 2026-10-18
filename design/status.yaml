@@ -1,6 +1,6 @@
 # The libraries both roles share: the quotas, the collected snapshot, and
 # the contract between the two processes.
-apiVersion: kit.kitsunium/design/v1
+apiVersion: design/v2
 domains:
   - name: status
     description: What a status line is made of, whichever process holds it.
@@ -289,7 +289,7 @@ domains:
             methods:
               - {name: CachePath, params: [{name: key, type: Key}], results: [{type: string}], properties: [InsideCache]}
           - name: LocateInput
-            description: "An instance is the framework's: the product's runtime directory, the key of its scopes (UID, executable, CLAUDE_CONFIG_DIR) — the same key its singleton takes — and the socket its listener opens (kit.SocketPathFor)."
+            description: "An instance is the framework's: the product's runtime directory, the key of its scopes (UID, executable, CLAUDE_CONFIG_DIR) — the same key its singleton takes — and the socket its listener opens (app.SocketPathFor)."
             fields:
               - {name: RuntimeDir, type: string}
               - {name: Key, type: string}

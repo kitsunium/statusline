@@ -1,7 +1,7 @@
 # The daemon role: collect what the client renders, keep it per session key,
 # keep the network figures fresh without hammering an endpoint, and keep the
 # binary up to date silently (D11).
-apiVersion: kit.kitsunium/design/v1
+apiVersion: design/v2
 domains:
   - name: collect
     description: The per-instance daemon and every source it reads.

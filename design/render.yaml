@@ -1,6 +1,6 @@
 # The client role: the host's payload and the daemon's snapshot drawn as two
 # lines, on every redraw, without ever waiting on the network.
-apiVersion: kit.kitsunium/design/v1
+apiVersion: design/v2
 domains:
   - name: render
     description: One redraw, from stdin to stdout.

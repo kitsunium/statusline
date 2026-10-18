@@ -1,6 +1,6 @@
-// Written once by kit gen, never again: this file is yours. The shells in
-// design_gen.go delegate to what it holds; kit check reads a body that still
-// answers errNotImplemented as a stub.
+// Written once from the design; this file is yours. The shells in
+// design_gen.go delegate to what it holds; a body that still answers
+// errNotImplemented is a stub.
 
 package daemon
 
@@ -14,8 +14,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kitsunium/sdk/framework/kit"
-	sdkipc "github.com/kitsunium/sdk/pkg/v1/ipc"
+	"github.com/kitsunium/sdk/framework/app"
+	sdkipc "github.com/kitsunium/sdk/pkg/v1/proc/ipc"
 
 	"github.com/kitsunium/statusline/collect/collector"
 	"github.com/kitsunium/statusline/ipc"
@@ -80,7 +80,7 @@ func halt(ctx context.Context, reason string) {
 		run.log.printf("stopping: %s", reason)
 	}
 	_ = os.Remove(run.instance.PID)
-	kit.Stop(ctx)
+	app.Stop(ctx)
 }
 
 // serve is one connection of the contract: Hello both ways, then the
@@ -207,7 +207,7 @@ func busy(ctx context.Context) bool {
 // status runs "statusline daemon status": it asks the instance's daemon
 // through the contract, as any client would; no daemon is exit 1, for
 // scripts.
-func status(ctx context.Context, _ []string, std kit.Stdio) int {
+func status(ctx context.Context, _ []string, std app.Stdio) int {
 	resp, err := ask(ctx, ipc.OpStatus)
 	if err != nil || resp.Status == nil {
 		_, _ = fmt.Fprintln(std.Err, "no daemon running")
@@ -218,7 +218,7 @@ func status(ctx context.Context, _ []string, std kit.Stdio) int {
 }
 
 // stop runs "statusline daemon stop": stopping no daemon is no error.
-func stop(ctx context.Context, _ []string, std kit.Stdio) int {
+func stop(ctx context.Context, _ []string, std app.Stdio) int {
 	if _, err := ask(ctx, ipc.OpStop); err != nil {
 		_, _ = fmt.Fprintln(std.Out, "no daemon running")
 		return 0

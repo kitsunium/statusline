@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kitsunium/sdk/framework/selfupdate"
 	"github.com/kitsunium/sdk/pkg/v1/errs"
-	"github.com/kitsunium/sdk/pkg/v1/selfupdate"
 
 	"github.com/kitsunium/statusline/collect/state"
 )

@@ -64,7 +64,7 @@ for ((r = 1; r <= rounds; r++)); do
     fi
     before=$(load)
     json="$out/r$r-$side.json"
-    (cd "$here/harness" && "$harness" latency -bin "${bin[$side]}" -flavour kit \
+    (cd "$here/harness" && "$harness" latency -bin "${bin[$side]}" -flavour current \
       -runs "$runs" -scenario "$scenario" -out "$json" >/dev/null)
     after=$(load)
     printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$r" "$side" "${sha[$side]}" "$before" "$after" \

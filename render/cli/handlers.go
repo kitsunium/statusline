@@ -1,6 +1,6 @@
-// Written once by kit gen, never again: this file is yours. The shells in
-// design_gen.go delegate to what it holds; kit check reads a body that still
-// answers errNotImplemented as a stub.
+// Written once from the design; this file is yours. The shells in
+// design_gen.go delegate to what it holds; a body that still answers
+// errNotImplemented is a stub.
 
 package cli
 
@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kitsunium/sdk/framework/kit"
+	"github.com/kitsunium/sdk/framework/app"
 
 	"github.com/kitsunium/statusline/render/show"
 )
@@ -23,7 +23,7 @@ const devVersion string = "dev"
 // the version; anything else renders, as the legacy binary did for
 // arguments it did not know. It never fails: this process is the host's
 // prompt line, and a render that errs still prints what it could.
-func line(ctx context.Context, args []string, std kit.Stdio) int {
+func line(ctx context.Context, args []string, std app.Stdio) int {
 	if len(args) == 1 && (args[0] == "-v" || args[0] == "--version") {
 		version := wired.version
 		if version == "" {

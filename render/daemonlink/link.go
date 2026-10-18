@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/kitsunium/sdk/pkg/v1/errs"
-	sdkipc "github.com/kitsunium/sdk/pkg/v1/ipc"
+	sdkipc "github.com/kitsunium/sdk/pkg/v1/proc/ipc"
 
 	"github.com/kitsunium/statusline/ipc"
 	"github.com/kitsunium/statusline/render/show"
