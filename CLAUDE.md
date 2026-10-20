@@ -10,10 +10,10 @@ the only link.
 `design/` is law on the structure (ADR 0010 of platform): components,
 exported types and functions, use cases, ports, which component imports
 which, the links each body makes, the wiring of each process role. Bodies
-are free. `kit gen` (platform; the version is pinned outside the product's
+are free. `kit gen` (kitsunium/studio, formerly platform; the version is pinned outside the product's
 files — `KIT_VERSION` in the CI, `kit pin vX.Y.Z` in this clone's git dir,
 platform ADR 0012 §8 — and read by kit's own toolchain switch) writes
-`*_gen.go` / `*_gen_test.go` — never edit them — and, once, the skeleton of
+`gen_*.go` / `gen_*_test.go` (kit's ADR 0014) — never edit them — and, once, the skeleton of
 each hand-written twin in `<name>.go` (a twin already declared elsewhere in
 the package is left alone). `kit gen -check`
 and `lourd kit check` must stay green; `closed: true` with no exceptions.
@@ -42,7 +42,7 @@ and `lourd kit check` must stay green; `closed: true` with no exceptions.
 design/            product.yaml (binary, roles, contract, evidence),
                    status.yaml (quota, snapshot, ipc libraries),
                    render.yaml (client), collect.yaml (daemon)
-cmd/statusline     main_gen.go + client/ and daemon/ wiring (generated, D22)
+cmd/statusline     gen_main.go + client/ and daemon/ wiring (generated, D22)
 quota/ snapshot/ ipc/   libraries shared by both roles; ipc = the contract
 render/            session, powerline, show (use cases + ports), cli,
                    daemonlink, systemclock
